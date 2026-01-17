@@ -1,0 +1,165 @@
+<!-- Edited By Song Zichen, Quan Hai Middle School -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能辅助学习系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>智能辅助学习系统</h1>
+            <p class="subtitle">支持数学、古诗、英语多种题型</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="math">数学题</button>
+            <button class="tab-btn" data-tab="poetry">古诗默写</button>
+            <button class="tab-btn" data-tab="english">英语默写</button>
+            <button class="tab-btn" data-tab="ai">AI问答</button>
+        </div>
+
+        <div class="tab-content active" id="math-tab">
+            <div class="card">
+                <h2>数学题设置</h2>
+                <div class="form-group">
+                    <label>选择年级：</label>
+                    <select id="math-grade" onchange="loadMathCategories()">
+                        <option value="">请选择年级</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>选择类别：</label>
+                    <select id="math-category" onchange="loadMathTypes()">
+                        <option value="">请先选择年级</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>选择题型：</label>
+                    <select id="math-type">
+                        <option value="">请先选择类别</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>题目数量：</label>
+                    <input type="number" id="math-count" value="20" min="5" max="100">
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="generateMath()">生成题目</button>
+                    <button class="btn btn-success" onclick="downloadMath()">下载Word</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="poetry-tab" style="display: none;">
+            <div class="card">
+                <h2>古诗默写设置</h2>
+                <div class="form-group">
+                    <label>选择古诗：</label>
+                    <div id="poetry-list" class="checkbox-list">
+                        <p>加载中...</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>题目数量：</label>
+                    <input type="number" id="poetry-count" value="10" min="5" max="50">
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="generatePoetry()">生成题目</button>
+                    <button class="btn btn-success" onclick="downloadPoetry()">下载Word</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="english-tab" style="display: none;">
+            <div class="card">
+                <h2>英语默写设置</h2>
+                <div class="form-group">
+                    <label>选择单元：</label>
+                    <select id="english-unit">
+                        <option value="">请选择单元</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>默写方向：</label>
+                    <select id="english-direction">
+                        <option value="cn_to_en">中译英</option>
+                        <option value="en_to_cn">英译汉</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="generateEnglish()">生成题目</button>
+                    <button class="btn btn-success" onclick="downloadEnglish()">下载Word</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="ai-tab" style="display: none;">
+            <div class="card">
+                <h2>AI智能问答</h2>
+                <div class="form-group">
+                    <label>选择模型：</label>
+                    <select id="ai-model">
+                        <option value="qwen2.5:0.5b">Qwen2.5 0.5B</option>
+                    </select>
+                </div>
+                <div class="chat-container">
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-message system-message">
+                            <div class="message-content">
+                                <p>欢迎使用AI智能问答！</p>
+                                <p>您可以问我任何问题，我会尽力回答。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <textarea id="chat-input" placeholder="输入您的问题..." rows="3"></textarea>
+                        <div class="chat-actions">
+                            <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+                            <button class="btn btn-secondary" onclick="clearChat()">清空对话</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="questions-section" id="questions-section" style="display: none;">
+            <div class="card">
+                <h2>在线练习</h2>
+                <div id="questions-container"></div>
+                <div class="button-group">
+                    <button class="btn btn-info" onclick="checkAnswers()">检查答案</button>
+                    <button class="btn btn-secondary" onclick="resetQuestions()">重置</button>
+                </div>
+                <div id="result-section" class="result-section" style="display: none;">
+                    <h3>练习结果</h3>
+                    <p id="result-text"></p>
+                    <div class="button-group" style="margin-top: 15px;">
+                        <button class="btn btn-success" onclick="downloadReport()">下载练习报告</button>
+                        <button class="btn btn-warning" id="ai-explain-btn" onclick="askAIForWrongAnswers()" style="display: none;">AI错题讲解</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="ai-explain-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>AI错题讲解</h3>
+                    <span class="close" onclick="closeAIExplainModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="ai-explain-messages" class="ai-explain-messages"></div>
+                    <div id="ai-explain-loading" class="ai-explain-loading" style="display: none;">
+                        <p>正在分析错题...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
