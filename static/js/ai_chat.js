@@ -1,0 +1,637 @@
+// Edited By Song Zichen, Quan Hai Middle School
+let aiMessageCounter = 0;
+let isDarkMode = false;
+
+// 主题切换功能
+function toggleTheme() {
+    const html = document.documentElement;
+    isDarkMode = !isDarkMode;
+    html.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('darkMode', isDarkMode);
+    updateThemeToggle();
+}
+
+function updateThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggleModal = document.getElementById('theme-toggle-modal');
+    
+    if (themeToggle) {
+        const moonIcon = themeToggle.querySelector('.fa-moon-o');
+        const sunIcon = themeToggle.querySelector('.fa-sun-o');
+        if (moonIcon && sunIcon) {
+            moonIcon.classList.toggle('dark:hidden', isDarkMode);
+            sunIcon.classList.toggle('hidden', !isDarkMode);
+            sunIcon.classList.toggle('dark:block', isDarkMode);
+        }
+    }
+    
+    if (themeToggleModal) {
+        themeToggleModal.classList.toggle('bg-gray-200', !isDarkMode);
+        themeToggleModal.classList.toggle('bg-gray-700', isDarkMode);
+        const toggleKnob = themeToggleModal.querySelector('span');
+        if (toggleKnob) {
+            toggleKnob.classList.toggle('translate-x-1', !isDarkMode);
+            toggleKnob.classList.toggle('translate-x-6', isDarkMode);
+        }
+    }
+}
+
+function loadTheme() {
+    const savedTheme = localStorage.getItem('darkMode');
+    isDarkMode = savedTheme === 'true';
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    updateThemeToggle();
+}
+
+// 设置模态框功能
+function openSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function parseMarkdown(text) {
+    if (!text) return '';
+    
+    const lines = text.split('\n');
+    let html = '';
+    let inCodeBlock = false;
+    let codeBlockContent = '';
+    let codeLanguage = '';
+    let inList = false;
+    let listItems = [];
+    let currentParagraph = '';
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        if (line.startsWith('```')) {
+            if (inCodeBlock) {
+                html += `<pre><code class="language-${codeLanguage}">${escapeHtml(codeBlockContent)}</code></pre>`;
+                inCodeBlock = false;
+                codeBlockContent = '';
+                codeLanguage = '';
+            } else {
+                if (inList) {
+                    html += '<ul>' + listItems.join('') + '</ul>';
+                    inList = false;
+                    listItems = [];
+                }
+                if (currentParagraph) {
+                    html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                    currentParagraph = '';
+                }
+                inCodeBlock = true;
+                codeLanguage = line.slice(3).trim();
+            }
+            continue;
+        }
+        
+        if (inCodeBlock) {
+            codeBlockContent += line + '\n';
+            continue;
+        }
+        
+        const trimmedLine = line.trim();
+        
+        if (trimmedLine === '') {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            html += '<br>';
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('# ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            html += `<h1 class="text-xl font-bold mb-2">${parseInlineMarkdown(trimmedLine.slice(2))}</h1>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('## ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            html += `<h2 class="text-lg font-semibold mb-2">${parseInlineMarkdown(trimmedLine.slice(3))}</h2>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('### ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            html += `<h3 class="text-md font-semibold mb-1">${parseInlineMarkdown(trimmedLine.slice(4))}</h3>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('#### ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            html += `<h4 class="text-sm font-semibold mb-1">${parseInlineMarkdown(trimmedLine.slice(5))}</h4>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('> ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            html += `<blockquote class="border-l-4 border-primary-500 pl-4 italic text-gray-600 dark:text-gray-300 my-4">${parseInlineMarkdown(trimmedLine.slice(2))}</blockquote>`;
+            continue;
+        }
+        
+        if (/^[-*+]\s+/.test(trimmedLine)) {
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            if (!inList) {
+                inList = true;
+                listItems = [];
+            }
+            listItems.push(`<li class="mb-1">${parseInlineMarkdown(trimmedLine.replace(/^[-*+]\s+/, ''))}</li>`);
+            continue;
+        }
+        
+        if (/^\d+\.\s+/.test(trimmedLine)) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            if (currentParagraph) {
+                html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+                currentParagraph = '';
+            }
+            html += `<ol class="list-decimal pl-5 my-4"><li class="mb-1">${parseInlineMarkdown(trimmedLine.replace(/^\d+\.\s+/, ''))}</li></ol>`;
+            continue;
+        }
+        
+        if (inList) {
+            html += '<ul>' + listItems.join('') + '</ul>';
+            inList = false;
+            listItems = [];
+        }
+        
+        // 累积段落内容，而不是每行都创建新段落
+        if (currentParagraph) {
+            currentParagraph += ' ' + trimmedLine;
+        } else {
+            currentParagraph = trimmedLine;
+        }
+    }
+    
+    if (inList) {
+        html += '<ul class="list-disc pl-5 my-4">' + listItems.join('') + '</ul>';
+    }
+    
+    if (currentParagraph) {
+        html += `<p>${parseInlineMarkdown(currentParagraph)}</p>`;
+    }
+    
+    return html;
+}
+
+function parseInlineMarkdown(text) {
+    if (!text) return '';
+    
+    let result = text;
+    
+    // 处理图片
+    result = result.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-lg my-4">');
+    
+    // 处理链接
+    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-primary-500 hover:underline">$1</a>');
+    
+    // 处理代码
+    result = result.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm">$1</code>');
+    
+    // 处理粗体和斜体
+    result = result.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    result = result.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // 处理删除线
+    result = result.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+    
+    // 处理任务列表
+    result = result.replace(/\[(x| )\]\s+(.+)/g, '<input type="checkbox" disabled $1> $2');
+    
+    return result;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function loadAIModels() {
+    try {
+        const response = await fetch('/api/ai/models');
+        const data = await response.json();
+        
+        console.log('AI模型响应数据:', data);
+        
+        if (data.models && Array.isArray(data.models)) {
+            const modelSelect = document.getElementById('ai-model');
+            if (modelSelect) {
+                modelSelect.innerHTML = '';
+                
+                data.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.name;
+                    option.textContent = model.name;
+                    modelSelect.appendChild(option);
+                });
+                
+                console.log('已加载模型数量:', data.models.length);
+            }
+        } else {
+            console.error('模型数据格式错误:', data);
+        }
+    } catch (error) {
+        console.error('加载AI模型列表失败:', error);
+    }
+}
+
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    const model = document.getElementById('ai-model').value;
+    
+    if (!message) {
+        alert('请输入问题');
+        return;
+    }
+    
+    const chatMessages = document.getElementById('chat-messages');
+    
+    // 添加用户消息
+    const userMessage = document.createElement('div');
+    userMessage.className = 'message user-message';
+    userMessage.innerHTML = `
+        <div class="message-content">
+            <p>${escapeHtml(message)}</p>
+        </div>
+        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+    `;
+    chatMessages.appendChild(userMessage);
+    
+    input.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // 添加AI消息
+    const aiMessageId = `ai-response-${aiMessageCounter}`;
+    aiMessageCounter++;
+    
+    const aiMessage = document.createElement('div');
+    aiMessage.className = 'message ai-message';
+    aiMessage.id = aiMessageId;
+    aiMessage.innerHTML = `
+        <div class="message-content">
+            <div class="loading"></div>
+        </div>
+    `;
+    chatMessages.appendChild(aiMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    try {
+        const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: message, model })
+        });
+        
+        if (response.ok) {
+            const aiResponseDiv = document.getElementById(aiMessageId);
+            if (!aiResponseDiv) {
+                console.error('未找到AI消息元素:', aiMessageId);
+                return;
+            }
+            
+            aiResponseDiv.innerHTML = '<div class="message-content"></div><div class="message-time">' + new Date().toLocaleTimeString() + '</div>';
+            const contentDiv = aiResponseDiv.querySelector('.message-content');
+            let fullContent = '';
+            let pendingUpdate = false;
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            
+            function updateDOM() {
+                if (pendingUpdate) {
+                    // 使用textContent而不是innerHTML，避免破坏Markdown格式
+                    contentDiv.textContent = fullContent;
+                    // 只在用户没有手动滚动时自动滚动
+                    const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop < chatMessages.clientHeight * 1.2;
+                    if (isNearBottom) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                    pendingUpdate = false;
+                }
+            }
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') {
+                            // 完成时解析Markdown并显示
+                            contentDiv.innerHTML = parseMarkdown(fullContent);
+                            // 渲染数学公式
+                            renderMathJax(contentDiv);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                            break;
+                        }
+                        
+                        try {
+                            const json = JSON.parse(data);
+                            if (json.content) {
+                                // 保留原始的换行符，只清理多余的空格
+                                const processedContent = json.content.replace(/[ \t]+/g, ' ').replace(/^\s+|\s+$/gm, '');
+                                // 直接添加内容
+                                fullContent += processedContent;
+                                if (!pendingUpdate) {
+                                    pendingUpdate = true;
+                                    // 使用requestAnimationFrame优化DOM更新
+                                    requestAnimationFrame(updateDOM);
+                                }
+                            }
+                        } catch (e) {
+                            console.error('解析流数据失败:', e);
+                        }
+                    }
+                }
+            }
+        } else {
+            const data = await response.json();
+            const aiMessageToRemove = document.getElementById(aiMessageId);
+            if (aiMessageToRemove) {
+                chatMessages.removeChild(aiMessageToRemove);
+            }
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'message ai-message';
+            errorMessage.innerHTML = `
+                <div class="message-content">
+                    <p>错误: ${escapeHtml(data.error || '未知错误')}</p>
+                </div>
+                <div class="message-time">${new Date().toLocaleTimeString()}</div>
+            `;
+            chatMessages.appendChild(errorMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    } catch (error) {
+        const aiMessageToRemove = document.getElementById(aiMessageId);
+        if (aiMessageToRemove) {
+            chatMessages.removeChild(aiMessageToRemove);
+        }
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'message ai-message';
+        errorMessage.innerHTML = `
+            <div class="message-content">
+                <p>错误: ${escapeHtml(error.message)}</p>
+            </div>
+            <div class="message-time">${new Date().toLocaleTimeString()}</div>
+        `;
+        chatMessages.appendChild(errorMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+function clearChat() {
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.innerHTML = `
+        <div class="message ai-message">
+            <div class="message-content">
+                <p>你好！我是智能AI助手，有什么可以帮助你的吗？</p>
+                <p>我可以回答各种问题，包括数学、语文、英语等学科问题，也可以和你聊天。</p>
+                <p>支持Markdown格式和数学公式哦！</p>
+            </div>
+            <div class="message-time">系统</div>
+        </div>
+    `;
+}
+
+function renderMathJax(element) {
+    // 检查MathJax是否已加载
+    if (typeof MathJax !== 'undefined') {
+        if (MathJax.typesetPromise) {
+            MathJax.typesetPromise([element]).catch(err => console.log('MathJax error:', err));
+        } else if (MathJax.Hub && MathJax.Hub.Queue) {
+            MathJax.Hub.Queue(['Typeset', MathJax.Hub, element]);
+        }
+    } else {
+        // 加载MathJax然后渲染
+        window.loadMathJax();
+        // 延迟一下确保MathJax已加载
+        setTimeout(() => {
+            if (typeof MathJax !== 'undefined') {
+                if (MathJax.typesetPromise) {
+                    MathJax.typesetPromise([element]).catch(err => console.log('MathJax error:', err));
+                } else if (MathJax.Hub && MathJax.Hub.Queue) {
+                    MathJax.Hub.Queue(['Typeset', MathJax.Hub, element]);
+                }
+            }
+        }, 500);
+    }
+}
+
+function handleKeyPress(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+}
+
+function newChat() {
+    clearChat();
+    const chatTitle = document.getElementById('chat-title');
+    if (chatTitle) {
+        chatTitle.textContent = '新对话';
+    }
+    
+    const historyItems = document.querySelectorAll('.history-item');
+    historyItems.forEach(item => item.classList.remove('active'));
+    
+    const newChatItem = document.querySelector('.history-item:first-child');
+    if (newChatItem) {
+        newChatItem.classList.add('active');
+    }
+}
+
+function loadHistory(historyId) {
+    const historyItems = document.querySelectorAll('.history-item');
+    historyItems.forEach(item => item.classList.remove('active'));
+    
+    if (historyId === 'new') {
+        clearChat();
+        const chatTitle = document.getElementById('chat-title');
+        if (chatTitle) {
+            chatTitle.textContent = '新对话';
+        }
+        const newChatItem = document.querySelector('.history-item:first-child');
+        if (newChatItem) {
+            newChatItem.classList.add('active');
+        }
+    }
+}
+
+// 设置模态框功能
+function openSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// 事件监听器
+function setupEventListeners() {
+    // 加载主题
+    loadTheme();
+    
+    // 发送按钮
+    const sendBtn = document.getElementById('send-btn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendMessage);
+    }
+    
+    // 清空按钮
+    const clearBtn = document.getElementById('clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearChat);
+    }
+    
+    // 新对话按钮
+    const newChatBtn = document.getElementById('new-chat-btn');
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', newChat);
+    }
+    
+    // 主题切换按钮
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    // 模态框主题切换按钮
+    const themeToggleModal = document.getElementById('theme-toggle-modal');
+    if (themeToggleModal) {
+        themeToggleModal.addEventListener('click', toggleTheme);
+    }
+    
+    // 设置按钮
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', openSettingsModal);
+    }
+    
+    // 关闭设置按钮
+    const closeSettingsBtn = document.getElementById('close-settings');
+    if (closeSettingsBtn) {
+        closeSettingsBtn.addEventListener('click', closeSettingsModal);
+    }
+    
+    // 保存设置按钮
+    const saveSettingsBtn = document.getElementById('save-settings');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', closeSettingsModal);
+    }
+    
+    // 点击模态框外部关闭
+    const settingsModal = document.getElementById('settings-modal');
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                closeSettingsModal();
+            }
+        });
+    }
+    
+    // 后退按钮
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            window.location.href = '/';
+        });
+    }
+    
+    // 聊天输入框
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', handleKeyPress);
+    }
+    
+    // 历史记录项
+    const historyItems = document.querySelectorAll('.history-item');
+    historyItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const historyId = item.dataset.historyId || 'new';
+            loadHistory(historyId);
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupEventListeners();
+    // 延迟加载AI模型列表，提高页面加载速度
+    setTimeout(loadAIModels, 100);
+});

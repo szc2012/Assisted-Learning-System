@@ -1,0 +1,188 @@
+<!-- Edited By Song Zichen, Quan Hai Middle School -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错题本 - 在线出题系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/notebook.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    <a href="/" class="back-link">返回首页</a>
+                </div>
+                <div class="header-center">
+                    <h1>错题本</h1>
+                    <p class="subtitle">记录错题，查漏补缺</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" onclick="showAddModal()">添加错题</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 统计信息 -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">总错题数</span>
+                <span class="stat-value" id="total-errors">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">总文件数</span>
+                <span class="stat-value" id="total-files">0</span>
+            </div>
+        </div>
+
+        <!-- 筛选和搜索 -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>科目筛选：</label>
+                <select id="subject-filter" onchange="loadErrors()">
+                    <option value="">全部科目</option>
+                </select>
+            </div>
+            <div class="search-group">
+                <input type="text" id="search-input" placeholder="搜索错题..." onkeyup="handleSearchKeyup(event)">
+                <button class="btn btn-info" onclick="searchErrors()">搜索</button>
+            </div>
+        </div>
+
+        <!-- 错题列表 -->
+        <div class="errors-container" id="errors-container">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑错题弹窗 -->
+    <div class="modal" id="error-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="modal-title">添加错题</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="error-form" enctype="multipart/form-data">
+                    <input type="hidden" id="error-id" value="">
+                    
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label>错题标题 <span class="required">*</span></label>
+                            <input type="text" id="error-title" placeholder="请输入错题标题" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>科目 <span class="required">*</span></label>
+                            <select id="error-subject">
+                                <option value="数学">数学</option>
+                                <option value="语文">语文</option>
+                                <option value="英语">英语</option>
+                                <option value="物理">物理</option>
+                                <option value="化学">化学</option>
+                                <option value="生物">生物</option>
+                                <option value="历史">历史</option>
+                                <option value="地理">地理</option>
+                                <option value="政治">政治</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>错题内容（文字描述）</label>
+                        <textarea id="question-text" rows="4" placeholder="可以在这里输入错题的文字内容..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>错题文件（图片/PDF/文档等）</label>
+                        <div class="file-upload-area" id="question-upload-area">
+                            <input type="file" id="question-files" multiple accept="image/*,.pdf,.doc,.docx,.txt,.md" onchange="handleFileSelect(this, 'question')">
+                            <div class="upload-placeholder">
+                                <span class="upload-icon">+</span>
+                                <span>点击或拖拽上传错题文件</span>
+                                <span class="upload-hint">支持图片、PDF、Word、文本等格式</span>
+                            </div>
+                        </div>
+                        <div class="file-preview" id="question-preview"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>答案内容（文字描述）</label>
+                        <textarea id="answer-text" rows="4" placeholder="可以在这里输入答案的文字内容..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>答案文件（图片/PDF/文档等）</label>
+                        <div class="file-upload-area" id="answer-upload-area">
+                            <input type="file" id="answer-files" multiple accept="image/*,.pdf,.doc,.docx,.txt,.md" onchange="handleFileSelect(this, 'answer')">
+                            <div class="upload-placeholder">
+                                <span class="upload-icon">+</span>
+                                <span>点击或拖拽上传答案文件</span>
+                                <span class="upload-hint">支持图片、PDF、Word、文本等格式</span>
+                            </div>
+                        </div>
+                        <div class="file-preview" id="answer-preview"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>讲解视频（可选）</label>
+                        <div class="file-upload-area" id="video-upload-area">
+                            <input type="file" id="video-files" multiple accept="video/*,audio/*" onchange="handleFileSelect(this, 'video')">
+                            <div class="upload-placeholder">
+                                <span class="upload-icon">+</span>
+                                <span>点击或拖拽上传讲题视频</span>
+                                <span class="upload-hint">支持MP4、AVI、MOV等视频格式</span>
+                            </div>
+                        </div>
+                        <div class="file-preview" id="video-preview"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>笔记/备注</label>
+                        <textarea id="error-notes" rows="3" placeholder="可以添加一些笔记或备注..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看错题详情弹窗 -->
+    <div class="modal" id="view-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="view-title">错题详情</h3>
+                <span class="close" onclick="closeViewModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="view-content">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认删除弹窗 -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>确认删除</h3>
+                <span class="close" onclick="closeConfirmModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这道错题吗？此操作不可恢复。</p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-btn">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/notebook.js"></script>
+</body>
+</html>

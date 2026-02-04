@@ -3,26 +3,212 @@ let currentQuestions = [];
 let currentType = '';
 let wrongAnswers = [];
 let mathConfig = null;
+let aiMessageCounter = 0;
+
+function parseMarkdown(text) {
+    if (!text) return '';
+    
+    const lines = text.split('\n');
+    let html = '';
+    let inCodeBlock = false;
+    let codeBlockContent = '';
+    let codeLanguage = '';
+    let inList = false;
+    let listItems = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        if (line.startsWith('```')) {
+            if (inCodeBlock) {
+                html += `<pre><code class="language-${codeLanguage}">${escapeHtml(codeBlockContent)}</code></pre>`;
+                inCodeBlock = false;
+                codeBlockContent = '';
+                codeLanguage = '';
+            } else {
+                if (inList) {
+                    html += '<ul>' + listItems.join('') + '</ul>';
+                    inList = false;
+                    listItems = [];
+                }
+                inCodeBlock = true;
+                codeLanguage = line.slice(3).trim();
+            }
+            continue;
+        }
+        
+        if (inCodeBlock) {
+            codeBlockContent += line + '\n';
+            continue;
+        }
+        
+        const trimmedLine = line.trim();
+        
+        if (trimmedLine === '') {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            html += '<br>';
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('# ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            html += `<h1>${parseInlineMarkdown(trimmedLine.slice(2))}</h1>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('## ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            html += `<h2>${parseInlineMarkdown(trimmedLine.slice(3))}</h2>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('### ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            html += `<h3>${parseInlineMarkdown(trimmedLine.slice(4))}</h3>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('#### ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            html += `<h4>${parseInlineMarkdown(trimmedLine.slice(5))}</h4>`;
+            continue;
+        }
+        
+        if (trimmedLine.startsWith('> ')) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            html += `<blockquote>${parseInlineMarkdown(trimmedLine.slice(2))}</blockquote>`;
+            continue;
+        }
+        
+        if (/^[-*+]\s+/.test(trimmedLine)) {
+            if (!inList) {
+                inList = true;
+                listItems = [];
+            }
+            listItems.push(`<li>${parseInlineMarkdown(trimmedLine.replace(/^[-*+]\s+/, ''))}</li>`);
+            continue;
+        }
+        
+        if (/^\d+\.\s+/.test(trimmedLine)) {
+            if (inList) {
+                html += '<ul>' + listItems.join('') + '</ul>';
+                inList = false;
+                listItems = [];
+            }
+            html += `<ol><li>${parseInlineMarkdown(trimmedLine.replace(/^\d+\.\s+/, ''))}</li></ol>`;
+            continue;
+        }
+        
+        if (inList) {
+            html += '<ul>' + listItems.join('') + '</ul>';
+            inList = false;
+            listItems = [];
+        }
+        
+        html += `<p>${parseInlineMarkdown(line)}</p>`;
+    }
+    
+    if (inList) {
+        html += '<ul>' + listItems.join('') + '</ul>';
+    }
+    
+    return html;
+}
+
+function parseInlineMarkdown(text) {
+    if (!text) return '';
+    
+    let result = text;
+    
+    result = result.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 100%;">');
+    
+    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    
+    result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    result = result.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    
+    result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    result = result.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    result = result.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+    
+    result = result.replace(/\[(x| )\]\s+(.+)/g, '<input type="checkbox" disabled $1> $2');
+    
+    return result;
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     initTabs();
-    loadPoetryList();
-    loadEnglishUnits();
-    loadMathConfig();
+    // 延迟加载数据，提高页面加载速度
+    setTimeout(() => {
+        loadPoetryList();
+        loadEnglishUnits();
+        loadMathConfig();
+        // 只在AI聊天页面加载模型列表
+        if (document.getElementById('ai-model')) {
+            loadAIModels();
+        }
+    }, 100);
 });
 
 function initTabs() {
     const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
     tabBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            tabBtns.forEach(b => b.classList.remove('active'));
+            const tabId = this.getAttribute('data-tab');
+            
+            // 特殊处理AI对话标签，直接跳转到独立页面
+            if (tabId === 'ai') {
+                window.location.href = '/ai/chat';
+                return;
+            }
+            
+            // 移除所有标签按钮的活跃状态
+            tabBtns.forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            // 添加当前标签按钮的活跃状态
             this.classList.add('active');
             
-            const tabId = this.getAttribute('data-tab');
-            document.querySelectorAll('.tab-content').forEach(tab => {
+            // 隐藏所有标签内容
+            tabContents.forEach(tab => {
                 tab.style.display = 'none';
             });
-            document.getElementById(tabId + '-tab').style.display = 'block';
+            
+            // 显示当前标签内容
+            const targetTab = document.getElementById(tabId + '-tab');
+            if (targetTab) {
+                targetTab.style.display = 'block';
+            }
         });
     });
 }
@@ -126,10 +312,17 @@ async function generateMath() {
     const categoryId = document.getElementById('math-category').value;
     const typeId = document.getElementById('math-type').value;
     const count = parseInt(document.getElementById('math-count').value);
+    const generateBtn = document.querySelector('button[onclick="generateMath()"]');
     
     if (!gradeId || !categoryId || !typeId) {
         alert('请完整选择年级、类别和题型');
         return;
+    }
+    
+    // 防止重复点击
+    if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.textContent = '生成中...';
     }
     
     try {
@@ -146,12 +339,19 @@ async function generateMath() {
     } catch (error) {
         console.error('生成数学题失败:', error);
         alert('生成题目失败，请重试');
+    } finally {
+        // 恢复按钮状态
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.textContent = '生成题目';
+        }
     }
 }
 
 async function generatePoetry() {
     const checkboxes = document.querySelectorAll('#poetry-list input[type="checkbox"]:checked');
     const selectedPoems = Array.from(checkboxes).map(cb => cb.value);
+    const generateBtn = document.querySelector('button[onclick="generatePoetry()"]');
     
     if (selectedPoems.length === 0) {
         alert('请至少选择一首古诗');
@@ -159,6 +359,12 @@ async function generatePoetry() {
     }
     
     const count = parseInt(document.getElementById('poetry-count').value);
+    
+    // 防止重复点击
+    if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.textContent = '生成中...';
+    }
     
     try {
         const response = await fetch('/api/generate/poetry', {
@@ -174,16 +380,29 @@ async function generatePoetry() {
     } catch (error) {
         console.error('生成古诗题失败:', error);
         alert('生成题目失败，请重试');
+    } finally {
+        // 恢复按钮状态
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.textContent = '生成题目';
+        }
     }
 }
 
 async function generateEnglish() {
     const unit = document.getElementById('english-unit').value;
     const direction = document.getElementById('english-direction').value;
+    const generateBtn = document.querySelector('button[onclick="generateEnglish()"]');
     
     if (!unit) {
         alert('请选择单元');
         return;
+    }
+    
+    // 防止重复点击
+    if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.textContent = '生成中...';
     }
     
     try {
@@ -200,6 +419,12 @@ async function generateEnglish() {
     } catch (error) {
         console.error('生成英语题失败:', error);
         alert('生成题目失败，请重试');
+    } finally {
+        // 恢复按钮状态
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.textContent = '生成题目';
+        }
     }
 }
 
@@ -367,11 +592,14 @@ async function sendMessage() {
     input.value = '';
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    const loadingMessage = document.createElement('div');
-    loadingMessage.className = 'chat-message ai-message';
-    loadingMessage.id = 'loading-message';
-    loadingMessage.innerHTML = `<div class="message-content"><p>正在思考...</p></div>`;
-    chatMessages.appendChild(loadingMessage);
+    const aiMessageId = `ai-response-${aiMessageCounter}`;
+    aiMessageCounter++;
+    
+    const aiMessage = document.createElement('div');
+    aiMessage.className = 'chat-message ai-message';
+    aiMessage.id = aiMessageId;
+    aiMessage.innerHTML = `<div class="message-content"><p>正在思考...</p></div>`;
+    chatMessages.appendChild(aiMessage);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
     try {
@@ -381,30 +609,80 @@ async function sendMessage() {
             body: JSON.stringify({ question: message, model })
         });
         
-        const data = await response.json();
-        
-        chatMessages.removeChild(loadingMessage);
-        
         if (response.ok) {
-            const aiMessage = document.createElement('div');
-            aiMessage.className = 'chat-message ai-message';
-            aiMessage.innerHTML = `<div class="message-content"><p>${escapeHtml(data.answer)}</p></div>`;
-            chatMessages.appendChild(aiMessage);
+            const aiResponseDiv = document.getElementById(aiMessageId);
+            if (!aiResponseDiv) {
+                console.error('未找到AI消息元素:', aiMessageId);
+                return;
+            }
+            
+            aiResponseDiv.innerHTML = '<div class="message-content"></div>';
+            const contentDiv = aiResponseDiv.querySelector('.message-content');
+            let fullContent = '';
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') {
+                            contentDiv.innerHTML = parseMarkdown(fullContent);
+                            renderMathJax(contentDiv);
+                            break;
+                        }
+                        
+                        try {
+                            const json = JSON.parse(data);
+                            if (json.content) {
+                                fullContent += json.content;
+                                contentDiv.textContent = fullContent;
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }
+                        } catch (e) {
+                            console.error('解析流数据失败:', e);
+                        }
+                    }
+                }
+            }
         } else {
+            const data = await response.json();
+            const aiMessageToRemove = document.getElementById(aiMessageId);
+            if (aiMessageToRemove) {
+                chatMessages.removeChild(aiMessageToRemove);
+            }
             const errorMessage = document.createElement('div');
             errorMessage.className = 'chat-message ai-message';
             errorMessage.innerHTML = `<div class="message-content"><p style="color: red;">错误: ${escapeHtml(data.error || '未知错误')}</p></div>`;
             chatMessages.appendChild(errorMessage);
         }
-        
-        chatMessages.scrollTop = chatMessages.scrollHeight;
     } catch (error) {
-        chatMessages.removeChild(loadingMessage);
+        const aiMessageToRemove = document.getElementById(aiMessageId);
+        if (aiMessageToRemove) {
+            chatMessages.removeChild(aiMessageToRemove);
+        }
         const errorMessage = document.createElement('div');
         errorMessage.className = 'chat-message ai-message';
         errorMessage.innerHTML = `<div class="message-content"><p style="color: red;">错误: ${escapeHtml(error.message)}</p></div>`;
         chatMessages.appendChild(errorMessage);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+function renderMathJax(element) {
+    if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+        MathJax.typesetPromise([element]).catch(err => console.log('MathJax error:', err));
+    } else if (typeof MathJax !== 'undefined' && MathJax.Hub && MathJax.Hub.Queue) {
+        MathJax.Hub.Queue(['Typeset', MathJax.Hub, element]);
+    } else {
+        console.log('MathJax not loaded yet');
     }
 }
 
@@ -424,6 +702,33 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+async function loadAIModels() {
+    try {
+        const response = await fetch('/api/ai/models');
+        const data = await response.json();
+        
+        console.log('AI模型响应数据:', data);
+        
+        if (data.models && Array.isArray(data.models)) {
+            const modelSelect = document.getElementById('ai-model');
+            modelSelect.innerHTML = '';
+            
+            data.models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.name;
+                option.textContent = model.name;
+                modelSelect.appendChild(option);
+            });
+            
+            console.log('已加载模型数量:', data.models.length);
+        } else {
+            console.error('模型数据格式错误:', data);
+        }
+    } catch (error) {
+        console.error('加载AI模型列表失败:', error);
+    }
 }
 
 document.getElementById('chat-input').addEventListener('keypress', function(e) {
@@ -564,6 +869,7 @@ async function askAIForSingleQuestion(index) {
         
         if (response.ok) {
             aiExplainResult.innerHTML = '';
+            let fullContent = '';
             
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -583,8 +889,7 @@ async function askAIForSingleQuestion(index) {
                         try {
                             const json = JSON.parse(data);
                             if (json.content) {
-                                aiExplainResult.innerHTML += escapeHtml(json.content);
-                                aiExplainResult.scrollTop = aiExplainResult.scrollHeight;
+                                fullContent += json.content;
                             }
                         } catch (e) {
                             console.error('解析流数据失败:', e);
@@ -592,12 +897,16 @@ async function askAIForSingleQuestion(index) {
                     }
                 }
             }
+            
+            // 完成后一次性解析Markdown并显示
+            aiExplainResult.innerHTML = parseMarkdown(fullContent);
+            aiExplainResult.scrollTop = aiExplainResult.scrollHeight;
         } else {
             const data = await response.json();
-            aiExplainResult.innerHTML = `<p style="color: red;">错误：${escapeHtml(data.error || '请求失败')}</p>`;
+            aiExplainResult.innerHTML = `<p style="color: red;">错误：${parseMarkdown(data.error || '请求失败')}</p>`;
         }
     } catch (error) {
-        aiExplainResult.innerHTML = `<p style="color: red;">错误：${escapeHtml(error.message)}</p>`;
+        aiExplainResult.innerHTML = `<p style="color: red;">错误：${parseMarkdown(error.message)}</p>`;
     } finally {
         aiExplainBtn.disabled = false;
         aiExplainBtn.textContent = 'AI讲解';
@@ -657,7 +966,7 @@ async function askAIForWrongAnswers() {
                         <p><strong>你的答案：</strong>${escapeHtml(wrong.userAnswer || '未作答')}</p>
                         <p><strong>正确答案：</strong>${escapeHtml(wrong.correctAnswer)}</p>
                         <p><strong>AI讲解：</strong></p>
-                        <p>${escapeHtml(explanation)}</p>
+                        <p>${parseMarkdown(explanation)}</p>
                     `;
                     
                     messagesContainer.appendChild(explainItem);
@@ -665,21 +974,21 @@ async function askAIForWrongAnswers() {
             } else {
                 const errorItem = document.createElement('div');
                 errorItem.className = 'ai-explain-item';
-                errorItem.innerHTML = `<p style="color: red;">${escapeHtml(data.error || '未能获取讲解内容')}</p>`;
+                errorItem.innerHTML = `<p style="color: red;">${parseMarkdown(data.error || '未能获取讲解内容')}</p>`;
                 messagesContainer.appendChild(errorItem);
             }
         } else {
             const data = await response.json();
             const errorItem = document.createElement('div');
             errorItem.className = 'ai-explain-item';
-            errorItem.innerHTML = `<p style="color: red;">错误：${escapeHtml(data.error || '请求失败')}</p>`;
+            errorItem.innerHTML = `<p style="color: red;">错误：${parseMarkdown(data.error || '请求失败')}</p>`;
             messagesContainer.appendChild(errorItem);
         }
     } catch (error) {
         loadingDiv.style.display = 'none';
         const errorItem = document.createElement('div');
         errorItem.className = 'ai-explain-item';
-        errorItem.innerHTML = `<p style="color: red;">错误：${escapeHtml(error.message)}</p>`;
+        errorItem.innerHTML = `<p style="color: red;">错误：${parseMarkdown(error.message)}</p>`;
         messagesContainer.appendChild(errorItem);
     }
 }

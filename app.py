@@ -9,13 +9,85 @@ import random
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import ollama
 import threading
 import platform
 import subprocess
+import uuid
+from werkzeug.utils import secure_filename
+
+# 简单的内存缓存实现
+cache = {}
+cache_expiry = {}
+CACHE_DURATION = timedelta(minutes=5)
+
+def get_cached_data(key):
+    """获取缓存数据"""
+    if key in cache and datetime.now() < cache_expiry.get(key, datetime.min):
+        return cache[key]
+    return None
+
+def set_cached_data(key, data):
+    """设置缓存数据"""
+    cache[key] = data
+    cache_expiry[key] = datetime.now() + CACHE_DURATION
+
+def clear_cache():
+    """清除所有缓存"""
+    cache.clear()
+    cache_expiry.clear()
 
 app = Flask(__name__)
+
+# 错题本配置
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'pdf', 'doc', 'docx', 'txt', 'md', 'mp4', 'avi', 'mov', 'mkv', 'webm', 'mp3', 'wav'}
+ERROR_NOTEBOOK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'error_notebook.json')
+MAX_CONTENT_LENGTH = 500 * 1024 * 1024  # 500MB 最大上传大小
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+
+# 确保上传目录存在
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'questions'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'answers'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'videos'), exist_ok=True)
+
+def allowed_file(filename):
+    """检查文件扩展名是否允许"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_error_notebook_data():
+    """获取错题本数据"""
+    if os.path.exists(ERROR_NOTEBOOK_FILE):
+        with open(ERROR_NOTEBOOK_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {'errors': []}
+
+def save_error_notebook_data(data):
+    """保存错题本数据"""
+    with open(ERROR_NOTEBOOK_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def get_file_type(filename):
+    """根据文件名获取文件类型"""
+    if not filename:
+        return 'unknown'
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    if ext in {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}:
+        return 'image'
+    elif ext == 'pdf':
+        return 'pdf'
+    elif ext in {'doc', 'docx'}:
+        return 'word'
+    elif ext in {'txt', 'md'}:
+        return 'text'
+    elif ext in {'mp4', 'avi', 'mov', 'mkv', 'webm'}:
+        return 'video'
+    elif ext in {'mp3', 'wav'}:
+        return 'audio'
+    return 'file'
 
 def set_cell_border(cell, **kwargs):
     tc = cell._tc
@@ -520,17 +592,34 @@ def create_english_word_document(questions, title, cols=3):
 def index():
     return render_template('index.html')
 
+@app.route('/ai/chat')
+def ai_chat_page():
+    return render_template('ai_chat_new.html')
+
 @app.route('/api/math/config')
 def get_math_config():
+    """获取数学配置，使用缓存"""
+    cache_key = 'math_config'
+    cached_data = get_cached_data(cache_key)
+    if cached_data:
+        return jsonify(cached_data)
+    
     data_file = os.path.join('data', 'math_config.json')
     if os.path.exists(data_file):
         with open(data_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
+        set_cached_data(cache_key, data)
         return jsonify(data)
     return jsonify({})
 
 @app.route('/api/poetry/list')
 def get_poetry_list():
+    """获取古诗列表，使用缓存"""
+    cache_key = 'poetry_list'
+    cached_data = get_cached_data(cache_key)
+    if cached_data:
+        return jsonify(cached_data)
+    
     data_file = os.path.join('data', 'poetry.json')
     if os.path.exists(data_file):
         with open(data_file, 'r', encoding='utf-8') as f:
@@ -539,16 +628,25 @@ def get_poetry_list():
         for content in data.get('contents', []):
             if content.get('type') == '诗歌':
                 poetry_list.extend(content.get('works', []))
+        set_cached_data(cache_key, poetry_list)
         return jsonify(poetry_list)
     return jsonify([])
 
 @app.route('/api/english/units')
 def get_english_units():
+    """获取英语单元，使用缓存"""
+    cache_key = 'english_units'
+    cached_data = get_cached_data(cache_key)
+    if cached_data:
+        return jsonify(cached_data)
+    
     data_file = os.path.join('data', 'english.json')
     if os.path.exists(data_file):
         with open(data_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        return jsonify(data.get('units', []))
+        units_data = data.get('units', [])
+        set_cached_data(cache_key, units_data)
+        return jsonify(units_data)
     return jsonify([])
 
 @app.route('/api/generate/math', methods=['POST'])
@@ -714,28 +812,68 @@ def ai_chat():
     if not question:
         return jsonify({'error': '请输入问题'}), 400
     
-    try:
-        print("使用系统Ollama服务")
-        
-        response = ollama.chat(model=model, messages=[{
-            'role': 'user',
-            'content': question
-        }])
-        
-        answer = response.get('message', {}).get('content', '')
-        return jsonify({'answer': answer})
-    except Exception as e:
-        error_msg = str(e)
-        if 'Failed to connect' in error_msg or 'Connection refused' in error_msg:
-            return jsonify({'error': '无法连接到Ollama服务。请确保Ollama已安装并正在运行。您可以运行 "ollama serve" 启动服务。详细说明请参考 OLLAMA_QUICKSTART.md'}), 500
-        return jsonify({'error': error_msg}), 500
+    def generate():
+        try:
+            print("使用系统Ollama服务")
+            print(f"使用模型: {model}")
+            
+            response = ollama.chat(model=model, messages=[{
+                'role': 'user',
+                'content': question
+            }], stream=True)
+            
+            for chunk in response:
+                content = chunk.get('message', {}).get('content', '')
+                if content:
+                    # 立即yield，不做额外处理
+                    yield f"data: {json.dumps({'content': content})}\n\n"
+            
+            yield "data: [DONE]\n\n"
+            print("AI回答完成")
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"AI回答失败: {error_msg}")
+            if 'Failed to connect' in error_msg or 'Connection refused' in error_msg:
+                yield f"data: {json.dumps({'content': '无法连接到Ollama服务。请确保Ollama已安装并正在运行。您可以运行 \"ollama serve\" 启动服务。详细说明请参考 OLLAMA_QUICKSTART.md'})}\n\n"
+            else:
+                yield f"data: {json.dumps({'content': f'回答失败：{error_msg}'})}\n\n"
+            yield "data: [DONE]\n\n"
+    
+    return Response(stream_with_context(generate()), mimetype='text/event-stream', headers={
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no'
+    })
 
 @app.route('/api/ai/models', methods=['GET'])
 def ai_models():
     try:
+        print("开始获取AI模型列表...")
         models = ollama.list()
-        return jsonify({'models': models})
+        print(f"获取到的模型对象: {models}")
+        print(f"模型对象类型: {type(models)}")
+        
+        models_list = []
+        
+        if hasattr(models, 'models') and models.models:
+            print(f"找到 {len(models.models)} 个模型")
+            for model in models.models:
+                model_name = model.model if hasattr(model, 'model') else str(model)
+                print(f"处理模型: {model_name}")
+                models_list.append({
+                    'name': model_name,
+                    'size': model.size,
+                    'modified': model.modified_at
+                })
+        else:
+            print("未找到models属性或models为空")
+        
+        print(f"返回的模型列表: {models_list}")
+        return jsonify({'models': models_list})
     except Exception as e:
+        print(f"获取AI模型列表失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/ai/explain', methods=['POST'])
@@ -843,6 +981,389 @@ def ai_explain_stream():
             yield "data: [DONE]\n\n"
     
     return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+# ==================== 错题本功能 ====================
+
+@app.route('/notebook')
+def error_notebook_page():
+    """错题本页面"""
+    return render_template('error_notebook.html')
+
+@app.route('/api/notebook/list', methods=['GET'])
+def get_error_list():
+    """获取错题列表"""
+    data = get_error_notebook_data()
+    subject = request.args.get('subject', '')
+    
+    errors = data.get('errors', [])
+    
+    # 按科目筛选
+    if subject:
+        errors = [e for e in errors if e.get('subject') == subject]
+    
+    # 按创建时间倒序排列
+    errors.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+    
+    return jsonify({'errors': errors, 'total': len(errors)})
+
+@app.route('/api/notebook/subjects', methods=['GET'])
+def get_subjects():
+    """获取所有科目列表"""
+    data = get_error_notebook_data()
+    subjects = list(set(e.get('subject', '其他') for e in data.get('errors', [])))
+    # 预设科目
+    preset_subjects = ['数学', '语文', '英语', '物理', '化学', '生物', '历史', '地理', '政治', '其他']
+    all_subjects = list(set(preset_subjects + subjects))
+    all_subjects.sort()
+    return jsonify({'subjects': all_subjects})
+
+@app.route('/api/notebook/add', methods=['POST'])
+def add_error():
+    """添加错题"""
+    try:
+        # 获取表单数据
+        title = request.form.get('title', '').strip()
+        subject = request.form.get('subject', '其他').strip()
+        question_text = request.form.get('question_text', '').strip()
+        answer_text = request.form.get('answer_text', '').strip()
+        notes = request.form.get('notes', '').strip()
+        
+        if not title:
+            return jsonify({'error': '请输入错题标题'}), 400
+        
+        # 生成唯一ID
+        error_id = str(uuid.uuid4())
+        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 处理上传的文件
+        question_files = []
+        answer_files = []
+        video_files = []
+        
+        # 处理错题文件（可多个）
+        if 'question_files' in request.files:
+            files = request.files.getlist('question_files')
+            for file in files:
+                if file and file.filename and allowed_file(file.filename):
+                    # 生成安全的文件名
+                    original_name = secure_filename(file.filename)
+                    # 保留中文文件名，但添加唯一前缀
+                    ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+                    new_filename = f"{error_id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    filepath = os.path.join(UPLOAD_FOLDER, 'questions', new_filename)
+                    file.save(filepath)
+                    question_files.append({
+                        'filename': new_filename,
+                        'original_name': file.filename,
+                        'type': get_file_type(file.filename),
+                        'size': os.path.getsize(filepath)
+                    })
+        
+        # 处理答案文件（可多个）
+        if 'answer_files' in request.files:
+            files = request.files.getlist('answer_files')
+            for file in files:
+                if file and file.filename and allowed_file(file.filename):
+                    original_name = secure_filename(file.filename)
+                    ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+                    new_filename = f"{error_id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    filepath = os.path.join(UPLOAD_FOLDER, 'answers', new_filename)
+                    file.save(filepath)
+                    answer_files.append({
+                        'filename': new_filename,
+                        'original_name': file.filename,
+                        'type': get_file_type(file.filename),
+                        'size': os.path.getsize(filepath)
+                    })
+        
+        # 处理视频文件（可多个）
+        if 'video_files' in request.files:
+            files = request.files.getlist('video_files')
+            for file in files:
+                if file and file.filename and allowed_file(file.filename):
+                    original_name = secure_filename(file.filename)
+                    ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+                    new_filename = f"{error_id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    filepath = os.path.join(UPLOAD_FOLDER, 'videos', new_filename)
+                    file.save(filepath)
+                    video_files.append({
+                        'filename': new_filename,
+                        'original_name': file.filename,
+                        'type': get_file_type(file.filename),
+                        'size': os.path.getsize(filepath)
+                    })
+        
+        # 创建错题记录
+        error_record = {
+            'id': error_id,
+            'title': title,
+            'subject': subject,
+            'question_text': question_text,
+            'answer_text': answer_text,
+            'notes': notes,
+            'question_files': question_files,
+            'answer_files': answer_files,
+            'video_files': video_files,
+            'created_at': created_at,
+            'updated_at': created_at
+        }
+        
+        # 保存到数据文件
+        data = get_error_notebook_data()
+        data['errors'].append(error_record)
+        save_error_notebook_data(data)
+        
+        return jsonify({'success': True, 'id': error_id, 'message': '错题添加成功'})
+        
+    except Exception as e:
+        print(f"添加错题失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'添加错题失败: {str(e)}'}), 500
+
+@app.route('/api/notebook/get/<error_id>', methods=['GET'])
+def get_error_detail(error_id):
+    """获取错题详情"""
+    data = get_error_notebook_data()
+    for error in data.get('errors', []):
+        if error.get('id') == error_id:
+            return jsonify({'error': error})
+    return jsonify({'error': '错题不存在'}), 404
+
+@app.route('/api/notebook/update/<error_id>', methods=['POST'])
+def update_error(error_id):
+    """更新错题"""
+    try:
+        data = get_error_notebook_data()
+        error_index = None
+        
+        for i, error in enumerate(data.get('errors', [])):
+            if error.get('id') == error_id:
+                error_index = i
+                break
+        
+        if error_index is None:
+            return jsonify({'error': '错题不存在'}), 404
+        
+        # 获取表单数据
+        title = request.form.get('title', '').strip()
+        subject = request.form.get('subject', '其他').strip()
+        question_text = request.form.get('question_text', '').strip()
+        answer_text = request.form.get('answer_text', '').strip()
+        notes = request.form.get('notes', '').strip()
+        
+        if not title:
+            return jsonify({'error': '请输入错题标题'}), 400
+        
+        # 更新基本信息
+        data['errors'][error_index]['title'] = title
+        data['errors'][error_index]['subject'] = subject
+        data['errors'][error_index]['question_text'] = question_text
+        data['errors'][error_index]['answer_text'] = answer_text
+        data['errors'][error_index]['notes'] = notes
+        data['errors'][error_index]['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 处理新上传的文件
+        if 'question_files' in request.files:
+            files = request.files.getlist('question_files')
+            for file in files:
+                if file and file.filename and allowed_file(file.filename):
+                    original_name = secure_filename(file.filename)
+                    ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+                    new_filename = f"{error_id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    filepath = os.path.join(UPLOAD_FOLDER, 'questions', new_filename)
+                    file.save(filepath)
+                    data['errors'][error_index]['question_files'].append({
+                        'filename': new_filename,
+                        'original_name': file.filename,
+                        'type': get_file_type(file.filename),
+                        'size': os.path.getsize(filepath)
+                    })
+        
+        if 'answer_files' in request.files:
+            files = request.files.getlist('answer_files')
+            for file in files:
+                if file and file.filename and allowed_file(file.filename):
+                    original_name = secure_filename(file.filename)
+                    ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+                    new_filename = f"{error_id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    filepath = os.path.join(UPLOAD_FOLDER, 'answers', new_filename)
+                    file.save(filepath)
+                    data['errors'][error_index]['answer_files'].append({
+                        'filename': new_filename,
+                        'original_name': file.filename,
+                        'type': get_file_type(file.filename),
+                        'size': os.path.getsize(filepath)
+                    })
+        
+        if 'video_files' in request.files:
+            files = request.files.getlist('video_files')
+            for file in files:
+                if file and file.filename and allowed_file(file.filename):
+                    original_name = secure_filename(file.filename)
+                    ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
+                    new_filename = f"{error_id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    filepath = os.path.join(UPLOAD_FOLDER, 'videos', new_filename)
+                    file.save(filepath)
+                    data['errors'][error_index]['video_files'].append({
+                        'filename': new_filename,
+                        'original_name': file.filename,
+                        'type': get_file_type(file.filename),
+                        'size': os.path.getsize(filepath)
+                    })
+        
+        save_error_notebook_data(data)
+        return jsonify({'success': True, 'message': '错题更新成功'})
+        
+    except Exception as e:
+        print(f"更新错题失败: {str(e)}")
+        return jsonify({'error': f'更新错题失败: {str(e)}'}), 500
+
+@app.route('/api/notebook/delete/<error_id>', methods=['DELETE'])
+def delete_error(error_id):
+    """删除错题"""
+    try:
+        data = get_error_notebook_data()
+        error_to_delete = None
+        
+        for error in data.get('errors', []):
+            if error.get('id') == error_id:
+                error_to_delete = error
+                break
+        
+        if not error_to_delete:
+            return jsonify({'error': '错题不存在'}), 404
+        
+        # 删除关联的文件
+        for file_info in error_to_delete.get('question_files', []):
+            filepath = os.path.join(UPLOAD_FOLDER, 'questions', file_info['filename'])
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        
+        for file_info in error_to_delete.get('answer_files', []):
+            filepath = os.path.join(UPLOAD_FOLDER, 'answers', file_info['filename'])
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        
+        for file_info in error_to_delete.get('video_files', []):
+            filepath = os.path.join(UPLOAD_FOLDER, 'videos', file_info['filename'])
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        
+        # 从数据中删除
+        data['errors'] = [e for e in data['errors'] if e.get('id') != error_id]
+        save_error_notebook_data(data)
+        
+        return jsonify({'success': True, 'message': '错题删除成功'})
+        
+    except Exception as e:
+        print(f"删除错题失败: {str(e)}")
+        return jsonify({'error': f'删除错题失败: {str(e)}'}), 500
+
+@app.route('/api/notebook/delete-file', methods=['POST'])
+def delete_error_file():
+    """删除错题的单个文件"""
+    try:
+        data_req = request.json
+        error_id = data_req.get('error_id')
+        file_type = data_req.get('file_type')  # 'question', 'answer', 'video'
+        filename = data_req.get('filename')
+        
+        if not all([error_id, file_type, filename]):
+            return jsonify({'error': '参数不完整'}), 400
+        
+        data = get_error_notebook_data()
+        
+        for error in data.get('errors', []):
+            if error.get('id') == error_id:
+                file_key = f'{file_type}_files'
+                if file_key in error:
+                    # 找到并删除文件记录
+                    for i, file_info in enumerate(error[file_key]):
+                        if file_info['filename'] == filename:
+                            # 删除物理文件
+                            folder_map = {'question': 'questions', 'answer': 'answers', 'video': 'videos'}
+                            filepath = os.path.join(UPLOAD_FOLDER, folder_map[file_type], filename)
+                            if os.path.exists(filepath):
+                                os.remove(filepath)
+                            # 删除记录
+                            error[file_key].pop(i)
+                            error['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            save_error_notebook_data(data)
+                            return jsonify({'success': True, 'message': '文件删除成功'})
+                
+                return jsonify({'error': '文件不存在'}), 404
+        
+        return jsonify({'error': '错题不存在'}), 404
+        
+    except Exception as e:
+        print(f"删除文件失败: {str(e)}")
+        return jsonify({'error': f'删除文件失败: {str(e)}'}), 500
+
+@app.route('/uploads/<folder>/<filename>')
+def serve_upload(folder, filename):
+    """提供上传文件的访问"""
+    if folder not in ['questions', 'answers', 'videos']:
+        return jsonify({'error': '无效的文件夹'}), 400
+    
+    filepath = os.path.join(UPLOAD_FOLDER, folder, filename)
+    if os.path.exists(filepath):
+        return send_file(filepath)
+    return jsonify({'error': '文件不存在'}), 404
+
+@app.route('/api/notebook/search', methods=['GET'])
+def search_errors():
+    """搜索错题"""
+    keyword = request.args.get('keyword', '').strip()
+    subject = request.args.get('subject', '')
+    
+    if not keyword and not subject:
+        return get_error_list()
+    
+    data = get_error_notebook_data()
+    errors = data.get('errors', [])
+    
+    results = []
+    for error in errors:
+        # 科目筛选
+        if subject and error.get('subject') != subject:
+            continue
+        
+        # 关键词搜索
+        if keyword:
+            searchable = f"{error.get('title', '')} {error.get('question_text', '')} {error.get('answer_text', '')} {error.get('notes', '')}"
+            if keyword.lower() not in searchable.lower():
+                continue
+        
+        results.append(error)
+    
+    results.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+    return jsonify({'errors': results, 'total': len(results)})
+
+@app.route('/api/notebook/stats', methods=['GET'])
+def get_notebook_stats():
+    """获取错题本统计信息"""
+    data = get_error_notebook_data()
+    errors = data.get('errors', [])
+    
+    # 统计各科目错题数量
+    subject_counts = {}
+    for error in errors:
+        subject = error.get('subject', '其他')
+        subject_counts[subject] = subject_counts.get(subject, 0) + 1
+    
+    # 统计文件数量
+    total_files = 0
+    for error in errors:
+        total_files += len(error.get('question_files', []))
+        total_files += len(error.get('answer_files', []))
+        total_files += len(error.get('video_files', []))
+    
+    return jsonify({
+        'total_errors': len(errors),
+        'subject_counts': subject_counts,
+        'total_files': total_files
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=3000)

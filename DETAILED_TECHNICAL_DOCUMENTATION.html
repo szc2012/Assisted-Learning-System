@@ -1,0 +1,3133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能辅助学习系统 - 详细技术文档</title>
+    <style>
+        /* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        header .version {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        header .author {
+            font-size: 1em;
+            opacity: 0.8;
+        }
+        
+        nav {
+            background: #2c3e50;
+            padding: 15px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        
+        nav a:hover {
+            background: #34495e;
+        }
+        
+        main {
+            padding: 40px 30px;
+        }
+        
+        section {
+            margin-bottom: 50px;
+            padding: 30px;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #34495e;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        h4 {
+            color: #7f8c8d;
+            margin: 20px 0 10px 0;
+            font-size: 1.2em;
+        }
+        
+        h5 {
+            color: #95a5a6;
+            margin: 15px 0 8px 0;
+            font-size: 1.1em;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+        
+        ul, ol {
+            margin: 15px 0 15px 20px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        code {
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #ecf0f1;
+        }
+        
+        th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #e0f7fa 0%, #bbdefb 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #00bcd4;
+        }
+        
+        .warning {
+            background: linear-gradient(120deg, #fff3cd 0%, #ffeaa7 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .success {
+            background: linear-gradient(120deg, #d4edda 0%, #c3e6cb 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .diagram {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .property-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .property-table th {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .property-table td {
+            vertical-align: top;
+            padding: 10px;
+        }
+        
+        .function-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .function-table th {
+            background: #6f42c1;
+            color: white;
+        }
+        
+        .function-table td {
+            vertical-align: top;
+            padding: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+            margin-top: 50px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            header {
+                padding: 30px 20px;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+            
+            main {
+                padding: 20px 15px;
+            }
+            
+            section {
+                padding: 20px 15px;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>智能辅助学习系统</h1>
+            <div class="version">技术文档 v1.2.0</div>
+            <div class="author">作者: Song Zichen, Quan Hai Middle School</div>
+            <div class="author">更新日期: 2026-02-04</div>
+        </header>
+        
+        <nav>
+            <ul>
+                <li><a href="#overview">系统概述</a></li>
+                <li><a href="#architecture">系统架构</a></li>
+                <li><a href="#tech-stack">技术栈详解</a></li>
+                <li><a href="#structure">项目结构</a></li>
+                <li><a href="#api">API文档</a></li>
+                <li><a href="#data-model">数据模型</a></li>
+                <li><a href="#components">前端组件</a></li>
+                <li><a href="#ai-integration">AI集成</a></li>
+                <li><a href="#word-generation">Word生成</a></li>
+                <li><a href="#cache">缓存机制</a></li>
+                <li><a href="#security">安全性</a></li>
+                <li><a href="#deployment">部署指南</a></li>
+                <li><a href="#performance">性能优化</a></li>
+                <li><a href="#error-handling">错误处理</a></li>
+                <li><a href="#extension">扩展指南</a></li>
+                <li><a href="#appendix">附录</a></li>
+            </ul>
+        </nav>
+        
+        <main>
+            <section id="overview">
+                <h2>1. 系统概述</h2>
+                
+                <h3>1.1 项目简介</h3>
+                <p>智能辅助学习系统是一款专为初中生设计的在线学习辅助工具，集成了题目生成、在线练习、智能批改、Word导出和AI错题讲解等功能。系统采用现代Web技术栈，提供流畅的用户体验。</p>
+                
+                <h3>1.2 核心功能</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>功能模块</th>
+                            <th>描述</th>
+                            <th>技术实现</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>数学题生成</td>
+                            <td>支持1-6年级多种题型</td>
+                            <td>后端随机算法生成</td>
+                        </tr>
+                        <tr>
+                            <td>古诗默写</td>
+                            <td>支持上下句填空</td>
+                            <td>JSON数据驱动</td>
+                        </tr>
+                        <tr>
+                            <td>英语默写</td>
+                            <td>中英互译练习</td>
+                            <td>单元词汇管理</td>
+                        </tr>
+                        <tr>
+                            <td>在线练习</td>
+                            <td>实时答题与批改</td>
+                            <td>前端实时校验</td>
+                        </tr>
+                        <tr>
+                            <td>练习报告</td>
+                            <td>Word格式详细报告</td>
+                            <td>python-docx生成</td>
+                        </tr>
+                        <tr>
+                            <td>AI问答</td>
+                            <td>智能对话与讲解</td>
+                            <td>Ollama + Qwen2.5</td>
+                        </tr>
+                        <tr>
+                            <td>错题本</td>
+                            <td>上传错题、答案、讲解视频</td>
+                            <td>Flask文件上传处理</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>1.3 设计原则</h3>
+                <ul>
+                    <li><strong>简洁性</strong>: 界面简洁，操作直观</li>
+                    <li><strong>响应式</strong>: 支持桌面端和移动端</li>
+                    <li><strong>离线优先</strong>: 本地运行，无需网络</li>
+                    <li><strong>可扩展</strong>: 模块化设计，易于扩展</li>
+                </ul>
+            </section>
+            
+            <section id="architecture">
+                <h2>2. 系统架构</h2>
+                
+                <h3>2.1 整体架构图</h3>
+                <div class="diagram">
+                    <pre>┌─────────────────────────────────────────────────────────────────┐
+│                         客户端 (Browser)                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
+│  │  index.html  │  │ ai_chat.html │  │    static/js/app.js  │  │
+│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
+│                              │                                   │
+│                    ┌─────────▼─────────┐                        │
+│                    │   Fetch API       │                        │
+│                    └─────────┬─────────┘                        │
+└──────────────────────────────┼──────────────────────────────────┘
+                               │ HTTP/SSE
+┌──────────────────────────────┼──────────────────────────────────┐
+│                         Flask Server                             │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                       app.py                             │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │    │
+│  │  │  题目生成   │  │  Word导出   │  │    AI服务       │  │    │
+│  │  │  generate_* │  │  create_*   │  │  ai_chat/explain│  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────────┘  │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │    │
+│  │  │   缓存层    │  │   路由层    │  │    工具函数     │  │    │
+│  │  │   cache     │  │  @app.route │  │  set_cell_border│  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└──────────────────────────────┼──────────────────────────────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+┌────────▼────────┐  ┌─────────▼─────────┐  ┌───────▼───────┐
+│   数据存储层    │  │    文档生成层     │  │   AI服务层    │
+│  ┌───────────┐  │  │  ┌─────────────┐  │  │ ┌───────────┐ │
+│  │poetry.json│  │  │  │ python-docx │  │  │ │  Ollama   │ │
+│  ├───────────┤  │  │  │  Document   │  │  │ │  Server   │ │
+│  │english.json│ │  │  │   Table     │  │  │ │ Qwen2.5   │ │
+│  ├───────────┤  │  │  │ Paragraph   │  │  │ │  :0.5b    │ │
+│  │math_config│  │  │  └─────────────┘  │  │ └───────────┘ │
+│  └───────────┘  │  └───────────────────┘  └───────────────┘
+└─────────────────┘</pre>
+                </div>
+                
+                <h3>2.2 数据流图</h3>
+                <div class="diagram">
+                    <pre>用户操作 → 前端事件处理 → API请求 → Flask路由 → 业务逻辑 → 数据处理 → 响应返回 → 前端渲染
+    │                                                                            │
+    └────────────────────── 用户界面更新 ◄───────────────────────────────────────┘</pre>
+                </div>
+                
+                <h3>2.3 模块依赖关系</h3>
+                <pre>app.py (主模块)
+    ├── flask (Web框架)
+    │   ├── render_template (模板渲染)
+    │   ├── request (请求处理)
+    │   ├── jsonify (JSON响应)
+    │   ├── send_file (文件下载)
+    │   ├── Response (流式响应)
+    │   └── stream_with_context (流式上下文)
+    ├── docx (文档生成)
+    │   ├── Document (文档对象)
+    │   ├── shared (共享样式)
+    │   ├── enum.text (文本枚举)
+    │   └── oxml (XML操作)
+    ├── ollama (AI服务)
+    │   ├── list (模型列表)
+    │   └── chat (对话接口)
+    └── 标准库
+        ├── random (随机数)
+        ├── json (JSON处理)
+        ├── os (文件系统)
+        ├── re (正则表达式)
+        ├── datetime (日期时间)
+        ├── threading (多线程)
+        ├── platform (平台信息)
+        └── subprocess (子进程)</pre>
+            </section>
+            
+            <section id="tech-stack">
+                <h2>3. 技术栈详解</h2>
+                
+                <h3>3.1 后端技术</h3>
+                
+                <h4>3.1.1 Python 3.7+</h4>
+                <ul>
+                    <li><strong>版本要求</strong>: Python 3.7 及以上</li>
+                    <li><strong>选择理由</strong>: 
+                        <ul>
+                            <li>语法简洁，开发效率高</li>
+                            <li>丰富的第三方库生态</li>
+                            <li>良好的跨平台支持</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <h4>3.1.2 Flask 3.0.0</h4>
+                <pre>from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=3000)</pre>
+                
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>特性</th>
+                            <th>用途</th>
+                            <th>示例</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>render_template</td>
+                            <td>渲染HTML模板</td>
+                            <td>render_template('index.html')</td>
+                        </tr>
+                        <tr>
+                            <td>request.json</td>
+                            <td>获取JSON请求体</td>
+                            <td>data = request.json</td>
+                        </tr>
+                        <tr>
+                            <td>jsonify</td>
+                            <td>返回JSON响应</td>
+                            <td>return jsonify({'status': 'ok'})</td>
+                        </tr>
+                        <tr>
+                            <td>send_file</td>
+                            <td>文件下载</td>
+                            <td>return send_file(filepath, as_attachment=True)</td>
+                        </tr>
+                        <tr>
+                            <td>Response</td>
+                            <td>自定义响应</td>
+                            <td>Response(generate(), mimetype='text/event-stream')</td>
+                        </tr>
+                        <tr>
+                            <td>stream_with_context</td>
+                            <td>流式响应上下文</td>
+                            <td>保持请求上下文的流式响应</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h4>3.1.3 python-docx 1.1.0</h4>
+                <pre>from docx import Document
+from docx.shared import Pt, Inches, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+
+# 创建文档
+doc = Document()
+
+# 设置页面
+section = doc.sections[0]
+section.page_height = Inches(11.69)  # A4纸高度
+section.page_width = Inches(8.27)    # A4纸宽度
+section.left_margin = Inches(0.5)
+section.right_margin = Inches(0.5)
+section.top_margin = Inches(0.5)
+section.bottom_margin = Inches(0.5)
+
+# 添加标题
+title_para = doc.add_paragraph()
+title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+title_run = title_para.add_run('标题')
+title_run.font.name = 'Times New Roman'
+title_run.font.size = Pt(16)
+title_run._element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
+title_run.font.bold = True
+
+# 添加表格
+table = doc.add_table(rows=5, cols=5)
+table.style = 'Table Grid'
+
+# 保存文档
+doc.save('output.docx')</pre>
+                
+                <h4>3.1.4 Ollama 0.4.7</h4>
+                <pre>import ollama
+
+# 获取模型列表
+models = ollama.list()
+
+# 同步对话
+response = ollama.chat(
+    model='qwen2.5:0.5b',
+    messages=[{'role': 'user', 'content': '你好'}]
+)
+
+# 流式对话
+response = ollama.chat(
+    model='qwen2.5:0.5b',
+    messages=[{'role': 'user', 'content': '请讲解这道题'}],
+    stream=True
+)
+for chunk in response:
+    content = chunk.get('message', {}).get('content', '')
+    print(content, end='')</pre>
+                
+                <h3>3.2 前端技术</h3>
+                
+                <h4>3.2.1 HTML5</h4>
+                <pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;在线出题系统&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class="container"&gt;
+        &lt;header&gt;...&lt;/header&gt;
+        &lt;div class="tabs"&gt;...&lt;/div&gt;
+        &lt;div class="tab-content"&gt;...&lt;/div&gt;
+        &lt;div class="questions-section"&gt;...&lt;/div&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+                
+                <h4>3.2.2 CSS3</h4>
+                <pre>/* 桌面端样式 */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.questions-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .tabs {
+        flex-direction: column;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .questions-container {
+        grid-template-columns: 1fr;
+    }
+}</pre>
+                
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>颜色变量</th>
+                            <th>十六进制值</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>主色调</td>
+                            <td>#667eea</td>
+                            <td>按钮、标签、链接</td>
+                        </tr>
+                        <tr>
+                            <td>成功色</td>
+                            <td>#28a745</td>
+                            <td>正确答案标记</td>
+                        </tr>
+                        <tr>
+                            <td>警告色</td>
+                            <td>#ffc107</td>
+                            <td>AI讲解按钮</td>
+                        </tr>
+                        <tr>
+                            <td>错误色</td>
+                            <td>#dc3545</td>
+                            <td>错误答案标记</td>
+                        </tr>
+                        <tr>
+                            <td>信息色</td>
+                            <td>#17a2b8</td>
+                            <td>检查答案按钮</td>
+                        </tr>
+                        <tr>
+                            <td>次要色</td>
+                            <td>#6c757d</td>
+                            <td>重置按钮</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h4>3.2.3 JavaScript (ES6+)</h4>
+                <pre>// 全局状态管理
+let currentQuestions = [];  // 当前题目列表
+let currentType = '';       // 当前题型
+let wrongAnswers = [];      // 错题列表
+let mathConfig = null;      // 数学配置缓存
+let aiMessageCounter = 0;   // AI消息计数器
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+    initTabs();
+    setTimeout(() => {
+        loadPoetryList();
+        loadEnglishUnits();
+        loadMathConfig();
+    }, 100);
+});
+
+// 异步数据加载
+async function loadPoetryList() {
+    try {
+        const response = await fetch('/api/poetry/list');
+        const data = await response.json();
+        // 渲染数据...
+    } catch (error) {
+        console.error('加载失败:', error);
+    }
+}
+
+// Fetch API 流式读取
+async function sendMessage() {
+    const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: message, model })
+    });
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        // 处理SSE数据...
+    }
+}</pre>
+            </section>
+            
+            <section id="structure">
+                <h2>4. 项目结构详解</h2>
+                
+                <h3>4.1 目录树</h3>
+                <pre>app/
+├── app.py                           # Flask主应用 (935行)
+├── requirements.txt                 # Python依赖 (3个包)
+├── start.sh                        # Linux/macOS启动脚本
+├── start.bat                       # Windows启动脚本
+├── windows_installer.bat           # Windows一键安装脚本
+├── README.md                       # 项目说明文档
+├── TECHNICAL_DOCUMENTATION.md      # 技术文档
+├── DETAILED_TECHNICAL_DOCUMENTATION.html # 本文档
+├── SIMPLE_DOCUMENTATION.md         # 简洁文档
+├── OLLAMA_GUIDE.md                 # Ollama配置指南
+├── OLLAMA_QUICKSTART.md           # Ollama快速入门
+├── OLLAMA_TROUBLESHOOTING.md      # Ollama故障排除
+├── PROJECT_STRUCTURE.md           # 项目结构说明
+│
+├── data/                           # 数据目录
+│   ├── math_config.json           # 数学题配置 (241行)
+│   ├── poetry.json                # 古诗数据 (326行)
+│   ├── english.json               # 英语词汇 (588行)
+│   └── *.docx                     # 生成的文档文件
+│
+├── templates/                      # HTML模板目录
+│   ├── index.html                 # 主页面 (151行)
+│   ├── ai_chat.html               # AI对话页面(旧)
+│   ├── ai_chat_new.html           # AI对话页面(新)
+│   └── error_notebook.html        # 错题本页面
+│
+├── static/                         # 静态资源目录
+│   ├── css/
+│   │   ├── style.css              # 主样式文件 (522行)
+│   │   ├── ai_chat.css            # AI对话样式
+│   │   └── notebook.css           # 错题本样式
+│   └── js/
+│       ├── app.js                 # 主JavaScript (1006行)
+│       ├── ai_chat.js             # AI对话脚本
+│       ├── ai_chat.min.js         # 压缩版本
+│       └── notebook.js            # 错题本脚本
+│
+├── uploads/                        # 上传文件目录
+│   ├── questions/                 # 错题文件
+│   ├── answers/                   # 答案文件
+│   └── videos/                    # 讲解视频
+│
+├── ollama/                         # 本地Ollama
+│   ├── ollama                     # Ollama可执行文件
+│   └── models/                    # 模型存储目录
+│
+└── venv/                           # Python虚拟环境
+    └── ...</pre>
+                
+                <h3>4.2 核心文件详解</h3>
+                
+                <h4>4.2.1 app.py (后端主文件)</h4>
+                <pre>app.py (1200+行)
+│
+├── 第1-20行: 导入声明
+│   ├── Flask相关
+│   ├── python-docx相关
+│   ├── 标准库
+│   └── ollama
+│
+├── 第22-45行: 缓存系统
+│   ├── cache = {}
+│   ├── cache_expiry = {}
+│   ├── get_cached_data()
+│   ├── set_cached_data()
+│   └── clear_cache()
+│
+├── 第47-70行: 错题本配置
+│   ├── UPLOAD_FOLDER
+│   ├── ALLOWED_EXTENSIONS
+│   ├── ERROR_NOTEBOOK_FILE
+│   └── MAX_CONTENT_LENGTH
+│
+├── 第72-95行: Word表格边框工具函数
+│   └── set_cell_border()
+│
+├── 第97-350行: 数学题生成模块
+│   ├── generate_math_questions()
+│   ├── generate_single_math_question()
+│   ├── generate_grade_1_2_question()
+│   ├── generate_grade_3_4_question()
+│   └── generate_grade_5_6_question()
+│
+├── 第352-387行: 古诗题生成
+│   └── generate_poetry_questions()
+│
+├── 第389-420行: 英语题生成
+│   └── generate_english_questions()
+│
+├── 第422-588行: Word文档生成
+│   ├── create_word_document()
+│   └── create_english_word_document()
+│
+├── 第590-756行: API路由 - 基础功能
+│   ├── / (首页)
+│   ├── /ai/chat (AI聊天页)
+│   ├── /api/math/config
+│   ├── /api/poetry/list
+│   ├── /api/english/units
+│   ├── /api/generate/math
+│   ├── /api/generate/poetry
+│   ├── /api/generate/english
+│   ├── /api/download/math
+│   ├── /api/download/poetry
+│   └── /api/download/english
+│
+├── 第758-844行: API路由 - 练习报告
+│   └── /api/download/report
+│
+├── 第846-917行: Ollama进程管理
+│   ├── get_ollama_path()
+│   ├── start_ollama()
+│   └── stop_ollama()
+│
+├── 第919-1004行: API路由 - AI功能
+│   ├── /api/ai/status
+│   ├── /api/ai/chat (流式)
+│   ├── /api/ai/models
+│   ├── /api/ai/explain
+│   └── /api/ai/explain/stream (流式)
+│
+├── 第1006-1200行: API路由 - 错题本功能
+│   ├── /notebook (错题本页面)
+│   ├── /api/notebook/list
+│   ├── /api/notebook/subjects
+│   ├── /api/notebook/add
+│   ├── /api/notebook/get/&lt;error_id&gt;
+│   ├── /api/notebook/update/&lt;error_id&gt;
+│   ├── /api/notebook/delete/&lt;error_id&gt;
+│   ├── /api/notebook/delete-file
+│   ├── /uploads/&lt;folder&gt;/&lt;filename&gt;
+│   ├── /api/notebook/search
+│   └── /api/notebook/stats
+│
+└── 第1202-1204行: 应用启动
+    └── app.run()</pre>
+                
+                <h4>4.2.2 app.js (前端主文件)</h4>
+                <div class="function-table">
+                    <thead>
+                        <tr>
+                            <th>函数名</th>
+                            <th>行号</th>
+                            <th>功能描述</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>parseMarkdown</td>
+                            <td>8-139</td>
+                            <td>Markdown转HTML</td>
+                        </tr>
+                        <tr>
+                            <td>parseInlineMarkdown</td>
+                            <td>142-164</td>
+                            <td>行内Markdown解析</td>
+                        </tr>
+                        <tr>
+                            <td>initTabs</td>
+                            <td>180-214</td>
+                            <td>标签页初始化</td>
+                        </tr>
+                        <tr>
+                            <td>loadPoetryList</td>
+                            <td>216-237</td>
+                            <td>加载古诗列表</td>
+                        </tr>
+                        <tr>
+                            <td>loadEnglishUnits</td>
+                            <td>239-256</td>
+                            <td>加载英语单元</td>
+                        </tr>
+                        <tr>
+                            <td>loadMathConfig</td>
+                            <td>258-269</td>
+                            <td>加载数学配置</td>
+                        </tr>
+                        <tr>
+                            <td>loadMathCategories</td>
+                            <td>272-288</td>
+                            <td>加载数学类别</td>
+                        </tr>
+                        <tr>
+                            <td>loadMathTypes</td>
+                            <td>290-308</td>
+                            <td>加载数学题型</td>
+                        </tr>
+                        <tr>
+                            <td>generateMath</td>
+                            <td>310-349</td>
+                            <td>生成数学题</td>
+                        </tr>
+                        <tr>
+                            <td>generatePoetry</td>
+                            <td>351-390</td>
+                            <td>生成古诗题</td>
+                        </tr>
+                        <tr>
+                            <td>generateEnglish</td>
+                            <td>392-429</td>
+                            <td>生成英语题</td>
+                        </tr>
+                        <tr>
+                            <td>displayQuestions</td>
+                            <td>431-462</td>
+                            <td>显示题目</td>
+                        </tr>
+                        <tr>
+                            <td>checkAnswers</td>
+                            <td>464-522</td>
+                            <td>检查答案</td>
+                        </tr>
+                        <tr>
+                            <td>resetQuestions</td>
+                            <td>524-530</td>
+                            <td>重置练习</td>
+                        </tr>
+                        <tr>
+                            <td>downloadReport</td>
+                            <td>532-573</td>
+                            <td>下载报告</td>
+                        </tr>
+                        <tr>
+                            <td>sendMessage</td>
+                            <td>575-677</td>
+                            <td>发送AI消息</td>
+                        </tr>
+                        <tr>
+                            <td>renderMathJax</td>
+                            <td>679-687</td>
+                            <td>渲染数学公式</td>
+                        </tr>
+                        <tr>
+                            <td>clearChat</td>
+                            <td>689-699</td>
+                            <td>清空聊天</td>
+                        </tr>
+                        <tr>
+                            <td>escapeHtml</td>
+                            <td>701-705</td>
+                            <td>HTML转义</td>
+                        </tr>
+                        <tr>
+                            <td>loadAIModels</td>
+                            <td>707-731</td>
+                            <td>加载AI模型</td>
+                        </tr>
+                        <tr>
+                            <td>downloadMath</td>
+                            <td>741-774</td>
+                            <td>下载数学题</td>
+                        </tr>
+                        <tr>
+                            <td>downloadPoetry</td>
+                            <td>776-809</td>
+                            <td>下载古诗题</td>
+                        </tr>
+                        <tr>
+                            <td>downloadEnglish</td>
+                            <td>811-842</td>
+                            <td>下载英语题</td>
+                        </tr>
+                        <tr>
+                            <td>askAIForSingleQuestion</td>
+                            <td>844-913</td>
+                            <td>单题AI讲解</td>
+                        </tr>
+                        <tr>
+                            <td>askAIForWrongAnswers</td>
+                            <td>916-993</td>
+                            <td>批量错题讲解</td>
+                        </tr>
+                        <tr>
+                            <td>closeAIExplainModal</td>
+                            <td>996-999</td>
+                            <td>关闭讲解弹窗</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h4>4.2.3 notebook.js (错题本脚本)</h4>
+                <div class="function-table">
+                    <thead>
+                        <tr>
+                            <th>函数名</th>
+                            <th>功能描述</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>loadSubjects</td>
+                            <td>加载科目列表</td>
+                        </tr>
+                        <tr>
+                            <td>loadStats</td>
+                            <td>加载统计信息</td>
+                        </tr>
+                        <tr>
+                            <td>loadErrors</td>
+                            <td>加载错题列表</td>
+                        </tr>
+                        <tr>
+                            <td>createErrorCard</td>
+                            <td>创建错题卡片HTML</td>
+                        </tr>
+                        <tr>
+                            <td>searchErrors</td>
+                            <td>搜索错题</td>
+                        </tr>
+                        <tr>
+                            <td>showAddModal</td>
+                            <td>显示添加错题弹窗</td>
+                        </tr>
+                        <tr>
+                            <td>editError</td>
+                            <td>编辑错题</td>
+                        </tr>
+                        <tr>
+                            <td>renderExistingFiles</td>
+                            <td>渲染已有文件</td>
+                        </tr>
+                        <tr>
+                            <td>deleteExistingFile</td>
+                            <td>删除已有文件</td>
+                        </tr>
+                        <tr>
+                            <td>handleFileSelect</td>
+                            <td>处理文件选择</td>
+                        </tr>
+                        <tr>
+                            <td>renderFilePreview</td>
+                            <td>渲染文件预览</td>
+                        </tr>
+                        <tr>
+                            <td>removeFile</td>
+                            <td>移除新选择的文件</td>
+                        </tr>
+                        <tr>
+                            <td>saveError</td>
+                            <td>保存错题</td>
+                        </tr>
+                        <tr>
+                            <td>viewError</td>
+                            <td>查看错题详情</td>
+                        </tr>
+                        <tr>
+                            <td>renderDetailFiles</td>
+                            <td>渲染详情页文件</td>
+                        </tr>
+                        <tr>
+                            <td>renderDetailVideos</td>
+                            <td>渲染详情页视频</td>
+                        </tr>
+                        <tr>
+                            <td>viewImage</td>
+                            <td>查看大图</td>
+                        </tr>
+                        <tr>
+                            <td>confirmDelete</td>
+                            <td>确认删除</td>
+                        </tr>
+                        <tr>
+                            <td>deleteError</td>
+                            <td>删除错题</td>
+                        </tr>
+                    </tbody>
+                </div>
+            </section>
+            
+            <section id="api">
+                <h2>5. 后端API文档</h2>
+                
+                <h3>5.1 API概览</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>端点</th>
+                            <th>方法</th>
+                            <th>描述</th>
+                            <th>请求体</th>
+                            <th>响应类型</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>/</td>
+                            <td>GET</td>
+                            <td>首页</td>
+                            <td>-</td>
+                            <td>HTML</td>
+                        </tr>
+                        <tr>
+                            <td>/ai/chat</td>
+                            <td>GET</td>
+                            <td>AI聊天页</td>
+                            <td>-</td>
+                            <td>HTML</td>
+                        </tr>
+                        <tr>
+                            <td>/notebook</td>
+                            <td>GET</td>
+                            <td>错题本页面</td>
+                            <td>-</td>
+                            <td>HTML</td>
+                        </tr>
+                        <tr>
+                            <td>/api/math/config</td>
+                            <td>GET</td>
+                            <td>数学配置</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/poetry/list</td>
+                            <td>GET</td>
+                            <td>古诗列表</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/english/units</td>
+                            <td>GET</td>
+                            <td>英语单元</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/generate/math</td>
+                            <td>POST</td>
+                            <td>生成数学题</td>
+                            <td>JSON</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/generate/poetry</td>
+                            <td>POST</td>
+                            <td>生成古诗题</td>
+                            <td>JSON</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/generate/english</td>
+                            <td>POST</td>
+                            <td>生成英语题</td>
+                            <td>JSON</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/download/math</td>
+                            <td>POST</td>
+                            <td>下载数学Word</td>
+                            <td>JSON</td>
+                            <td>File</td>
+                        </tr>
+                        <tr>
+                            <td>/api/download/poetry</td>
+                            <td>POST</td>
+                            <td>下载古诗Word</td>
+                            <td>JSON</td>
+                            <td>File</td>
+                        </tr>
+                        <tr>
+                            <td>/api/download/english</td>
+                            <td>POST</td>
+                            <td>下载英语Word</td>
+                            <td>JSON</td>
+                            <td>File</td>
+                        </tr>
+                        <tr>
+                            <td>/api/download/report</td>
+                            <td>POST</td>
+                            <td>下载练习报告</td>
+                            <td>JSON</td>
+                            <td>File</td>
+                        </tr>
+                        <tr>
+                            <td>/api/ai/status</td>
+                            <td>GET</td>
+                            <td>AI服务状态</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/ai/models</td>
+                            <td>GET</td>
+                            <td>AI模型列表</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/ai/chat</td>
+                            <td>POST</td>
+                            <td>AI对话</td>
+                            <td>JSON</td>
+                            <td>SSE</td>
+                        </tr>
+                        <tr>
+                            <td>/api/ai/explain</td>
+                            <td>POST</td>
+                            <td>错题讲解</td>
+                            <td>JSON</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/ai/explain/stream</td>
+                            <td>POST</td>
+                            <td>流式讲解</td>
+                            <td>JSON</td>
+                            <td>SSE</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/list</td>
+                            <td>GET</td>
+                            <td>错题列表</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/subjects</td>
+                            <td>GET</td>
+                            <td>科目列表</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/add</td>
+                            <td>POST</td>
+                            <td>添加错题</td>
+                            <td>FormData</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/get/{error_id}</td>
+                            <td>GET</td>
+                            <td>获取错题详情</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/update/{error_id}</td>
+                            <td>POST</td>
+                            <td>更新错题</td>
+                            <td>FormData</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/delete/{error_id}</td>
+                            <td>DELETE</td>
+                            <td>删除错题</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/delete-file</td>
+                            <td>POST</td>
+                            <td>删除错题文件</td>
+                            <td>JSON</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/uploads/{folder}/{filename}</td>
+                            <td>GET</td>
+                            <td>获取上传文件</td>
+                            <td>-</td>
+                            <td>File</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/search</td>
+                            <td>GET</td>
+                            <td>搜索错题</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td>/api/notebook/stats</td>
+                            <td>GET</td>
+                            <td>统计信息</td>
+                            <td>-</td>
+                            <td>JSON</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>5.2 API详细说明</h3>
+                
+                <h4>5.2.1 GET /api/math/config</h4>
+                <p><strong>功能</strong>: 获取数学题配置</p>
+                <p><strong>响应示例</strong>:</p>
+                <pre>{
+  "grade_levels": [
+    {
+      "id": "1-2",
+      "name": "1-2年级",
+      "description": "基础运算（打牢计算根基）",
+      "categories": [
+        {
+          "id": "addition_within_20",
+          "name": "20以内加减法",
+          "types": [
+            {
+              "id": "oral_calculation",
+              "name": "口算",
+              "description": "凑十法、破十法",
+              "examples": ["8+5", "13-4"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+                <p><strong>缓存</strong>: 5分钟</p>
+                
+                <h4>5.2.2 POST /api/generate/math</h4>
+                <p><strong>功能</strong>: 生成数学题</p>
+                <p><strong>请求体</strong>:</p>
+                <pre>{
+  "grade_id": "1-2",
+  "category_id": "addition_within_20",
+  "type_id": "oral_calculation",
+  "count": 20
+}</pre>
+                <p><strong>响应</strong>:</p>
+                <pre>{
+  "questions": [
+    {"question": "8 + 5 = ", "answer": 13},
+    {"question": "13 - 4 = ", "answer": 9}
+  ]
+}</pre>
+                
+                <h4>5.2.3 POST /api/notebook/add</h4>
+                <p><strong>功能</strong>: 添加错题</p>
+                <p><strong>请求体</strong>: FormData</p>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>字段</th>
+                            <th>类型</th>
+                            <th>描述</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>title</td>
+                            <td>string</td>
+                            <td>错题标题</td>
+                        </tr>
+                        <tr>
+                            <td>subject</td>
+                            <td>string</td>
+                            <td>科目</td>
+                        </tr>
+                        <tr>
+                            <td>question_text</td>
+                            <td>string</td>
+                            <td>错题文字描述</td>
+                        </tr>
+                        <tr>
+                            <td>answer_text</td>
+                            <td>string</td>
+                            <td>答案文字描述</td>
+                        </tr>
+                        <tr>
+                            <td>notes</td>
+                            <td>string</td>
+                            <td>笔记/备注</td>
+                        </tr>
+                        <tr>
+                            <td>question_files</td>
+                            <td>file[]</td>
+                            <td>错题文件（多文件）</td>
+                        </tr>
+                        <tr>
+                            <td>answer_files</td>
+                            <td>file[]</td>
+                            <td>答案文件（多文件）</td>
+                        </tr>
+                        <tr>
+                            <td>video_files</td>
+                            <td>file[]</td>
+                            <td>讲解视频（多文件）</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h4>5.2.4 POST /api/ai/chat</h4>
+                <p><strong>功能</strong>: AI对话（流式响应）</p>
+                <p><strong>请求体</strong>:</p>
+                <pre>{
+  "question": "请问什么是勾股定理?",
+  "model": "qwen2.5:0.5b"
+}</pre>
+                <p><strong>响应</strong>: Server-Sent Events (SSE)</p>
+                <pre>data: {"content": "勾"}
+
+data: {"content": "股"}
+
+data: {"content": "定理是"}
+
+data: [DONE]</pre>
+            </section>
+            
+            <section id="data-model">
+                <h2>6. 数据模型设计</h2>
+                
+                <h3>6.1 数学配置模型 (math_config.json)</h3>
+                <pre>interface MathConfig {
+  grade_levels: GradeLevel[];
+}
+
+interface GradeLevel {
+  id: string;           // 年级ID: "1-2", "3-4", "5-6"
+  name: string;         // 年级名称
+  description: string;  // 年级描述
+  categories: Category[];
+}
+
+interface Category {
+  id: string;           // 类别ID
+  name: string;         // 类别名称
+  types: QuestionType[];
+}
+
+interface QuestionType {
+  id: string;           // 题型ID
+  name: string;         // 题型名称
+  description?: string; // 题型描述
+  examples?: string[];  // 题目示例
+}</pre>
+                
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>年级</th>
+                            <th>类别</th>
+                            <th>题型</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1-2年级</td>
+                            <td>20以内加减法</td>
+                            <td>口算、连加、连减、加减混合</td>
+                        </tr>
+                        <tr>
+                            <td>1-2年级</td>
+                            <td>100以内加减法</td>
+                            <td>口算、笔算</td>
+                        </tr>
+                        <tr>
+                            <td>1-2年级</td>
+                            <td>表内乘除法</td>
+                            <td>乘法口诀、用口诀求商</td>
+                        </tr>
+                        <tr>
+                            <td>1-2年级</td>
+                            <td>简单混合运算</td>
+                            <td>同级运算</td>
+                        </tr>
+                        <tr>
+                            <td>3-4年级</td>
+                            <td>多位数乘一位数</td>
+                            <td>口算、笔算</td>
+                        </tr>
+                        <tr>
+                            <td>3-4年级</td>
+                            <td>有余数的除法</td>
+                            <td>笔算</td>
+                        </tr>
+                        <tr>
+                            <td>3-4年级</td>
+                            <td>两位数乘两位数</td>
+                            <td>口算(估算)、笔算</td>
+                        </tr>
+                        <tr>
+                            <td>3-4年级</td>
+                            <td>除数是一位数的除法</td>
+                            <td>笔算</td>
+                        </tr>
+                        <tr>
+                            <td>3-4年级</td>
+                            <td>四则混合运算</td>
+                            <td>含括号</td>
+                        </tr>
+                        <tr>
+                            <td>5-6年级</td>
+                            <td>小数运算</td>
+                            <td>加减法、乘除法</td>
+                        </tr>
+                        <tr>
+                            <td>5-6年级</td>
+                            <td>分数运算</td>
+                            <td>加减法、乘除法、混合运算</td>
+                        </tr>
+                        <tr>
+                            <td>5-6年级</td>
+                            <td>百分数运算</td>
+                            <td>互化、应用题相关计算</td>
+                        </tr>
+                        <tr>
+                            <td>5-6年级</td>
+                            <td>运算定律应用</td>
+                            <td>简算</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>6.2 古诗数据模型 (poetry.json)</h3>
+                <pre>interface PoetryData {
+  grade: string;           // 年级: "初二上册（部编新版）"
+  category: string;        // 分类: "课文背诵篇目"
+  contents: ContentGroup[];
+}
+
+interface ContentGroup {
+  type: string;            // 类型: "诗歌", "散文", "议论文"
+  works: Poem[];
+}
+
+interface Poem {
+  id: number;              // 唯一标识
+  name: string;            // 诗名
+  author: string;          // 作者
+  dynasty: string;         // 朝代
+  text: string[] | string; // 诗句数组或全文
+}</pre>
+                
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>名称</th>
+                            <th>作者</th>
+                            <th>朝代</th>
+                            <th>行数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>野望</td>
+                            <td>王绩</td>
+                            <td>唐代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>黄鹤楼</td>
+                            <td>崔颢</td>
+                            <td>唐代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>使至塞上</td>
+                            <td>王维</td>
+                            <td>唐代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>渡荆门送别</td>
+                            <td>李白</td>
+                            <td>唐代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>钱塘湖春行</td>
+                            <td>白居易</td>
+                            <td>唐代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>庭中有奇树</td>
+                            <td>佚名</td>
+                            <td>汉代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td>龟虽寿</td>
+                            <td>曹操</td>
+                            <td>汉代</td>
+                            <td>12</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td>赠从弟</td>
+                            <td>刘桢</td>
+                            <td>汉代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td>梁甫行</td>
+                            <td>曹植</td>
+                            <td>三国</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td>饮酒（其五）</td>
+                            <td>陶渊明</td>
+                            <td>东晋</td>
+                            <td>10</td>
+                        </tr>
+                        <tr>
+                            <td>11</td>
+                            <td>春望</td>
+                            <td>杜甫</td>
+                            <td>唐代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td>雁门太守行</td>
+                            <td>李贺</td>
+                            <td>唐代</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>13</td>
+                            <td>赤壁</td>
+                            <td>杜牧</td>
+                            <td>唐代</td>
+                            <td>4</td>
+                        </tr>
+                        <tr>
+                            <td>14</td>
+                            <td>渔家傲</td>
+                            <td>李清照</td>
+                            <td>宋代</td>
+                            <td>10</td>
+                        </tr>
+                        <tr>
+                            <td>15</td>
+                            <td>浣溪沙</td>
+                            <td>晏殊</td>
+                            <td>宋代</td>
+                            <td>6</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>6.3 英语数据模型 (english.json)</h3>
+                <pre>interface EnglishData {
+  grade: string;           // 年级: "八年级上册"
+  edition: string;         // 版本: "人教版（2025秋版）"
+  units: Unit[];
+}
+
+interface Unit {
+  name: string;            // 单元名称
+  words: Word[];
+}
+
+interface Word {
+  english: string;         // 英文
+  chinese: string;         // 中文释义
+}</pre>
+                
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>单元</th>
+                            <th>单词数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Unit 1 Where did you go on vacation?</td>
+                            <td>82</td>
+                        </tr>
+                        <tr>
+                            <td>Unit 2 How often do you exercise?</td>
+                            <td>63</td>
+                        </tr>
+                        <tr>
+                            <td>Unit 3 I'm more outgoing than my sister.</td>
+                            <td>73</td>
+                        </tr>
+                        <tr>
+                            <td>Unit 4 What's the best movie theater?</td>
+                            <td>70</td>
+                        </tr>
+                        <tr>
+                            <td>Unit 5 Do you want to watch a game show?</td>
+                            <td>68</td>
+                        </tr>
+                        <tr>
+                            <td>Unit 6 I'm going to study computer science.</td>
+                            <td>60</td>
+                        </tr>
+                        <tr>
+                            <td>Unit 7 Will people have robots?</td>
+                            <td>67</td>
+                        </tr>
+                        <tr>
+                            <td>Unit 8 How do you make a banana milk shake?</td>
+                            <td>72</td>
+                        </tr>
+                        <tr>
+                            <td><strong>总计</strong></td>
+                            <td><strong>555</strong></td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>6.4 错题本数据模型 (error_notebook.json)</h3>
+                <pre>interface ErrorNotebook {
+  errors: ErrorRecord[];
+}
+
+interface ErrorRecord {
+  id: string;                    // 错题唯一ID
+  title: string;                 // 错题标题
+  subject: string;               // 科目
+  question_text: string;         // 错题文字描述
+  answer_text: string;           // 答案文字描述
+  notes: string;                 // 笔记/备注
+  question_files: FileInfo[];    // 错题文件列表
+  answer_files: FileInfo[];      // 答案文件列表
+  video_files: FileInfo[];       // 讲解视频列表
+  created_at: string;            // 创建时间
+  updated_at: string;            // 更新时间
+}
+
+interface FileInfo {
+  filename: string;              // 服务器存储文件名
+  original_name: string;         // 原始文件名
+  type: string;                  // 文件类型 (image/pdf/doc/video等)
+  size: number;                  // 文件大小(字节)
+}</pre>
+            </section>
+            
+            <section id="components">
+                <h2>7. 前端组件详解</h2>
+                
+                <h3>7.1 页面结构</h3>
+                
+                <h4>7.1.1 主页面 (index.html)</h4>
+                <div class="diagram">
+                    <pre>┌─────────────────────────────────────────────────────────────┐
+│                         header                               │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                在线出题系统                            │  │
+│  │         支持数学、古诗、英语多种题型                   │  │
+│  │                    [错题本]                            │  │
+│  └───────────────────────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                          tabs                                │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ 数学题  │ │古诗默写 │ │英语默写 │ │ AI对话  │        │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+├─────────────────────────────────────────────────────────────┤
+│                       tab-content                            │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                    设置表单                            │  │
+│  │  选择年级: [_____▼]                                   │  │
+│  │  选择类别: [_____▼]                                   │  │
+│  │  选择题型: [_____▼]                                   │  │
+│  │  题目数量: [__20__]                                   │  │
+│  │  [生成题目] [下载Word]                                │  │
+│  └───────────────────────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                    questions-section                         │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                    在线练习                            │  │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │  │
+│  │  │ 8+5=    │ │ 13-4=   │ │ 6×7=    │ │ 42÷6=   │     │  │
+│  │  │ [____]  │ │ [____]  │ │ [____]  │ │ [____]  │     │  │
+│  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘     │  │
+│  │  [检查答案] [重置]                                    │  │
+│  │  ┌───────────────────────────────────────────────┐   │  │
+│  │  │  练习结果: 正确 18/20, 正确率 90%              │   │  │
+│  │  │  [下载练习报告]                                │   │  │
+│  │  └───────────────────────────────────────────────┘   │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘</pre>
+                </div>
+                
+                <h4>7.1.2 错题本页面 (error_notebook.html)</h4>
+                <div class="diagram">
+                    <pre>┌─────────────────────────────────────────────────────────────┐
+│                         header                               │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │        [返回首页] 错题本 [添加错题]                    │  │
+│  └───────────────────────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                         stats                                │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
+│  │ 总错题数    │ │ 总文件数    │ │ 科目分布图  │           │
+│  │    25      │ │     45      │ │  [图表]     │           │
+│  └─────────────┘ └─────────────┘ └─────────────┘           │
+├─────────────────────────────────────────────────────────────┤
+│                        filter                                │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  科目筛选: [全部▼]  搜索: [_______________] [搜索]    │  │
+│  └───────────────────────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                      errors-container                        │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐│
+│  │  数学 2026-02-04│ │  英语 2026-02-03│ │  物理 2026-02-02││
+│  │  二次方程求解   │ │  定语从句辨析   │ │  力的合成与分解 ││
+│  │  [查看][编辑][删]│ │  [查看][编辑][删]│ │  [查看][编辑][删]││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘│
+└─────────────────────────────────────────────────────────────┘</pre>
+                </div>
+                
+                <h3>7.2 CSS组件</h3>
+                
+                <h4>7.2.1 按钮组件</h4>
+                <pre>/* 基础按钮 */
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    flex: 1;
+}
+
+/* 按钮变体 */
+.btn-primary { background: #667eea; color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-info { background: #17a2b8; color: white; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-warning { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); color: white; }</pre>
+                
+                <h4>7.2.2 表单组件</h4>
+                <pre>/* 输入框 */
+.form-group input[type="number"],
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+/* 聚焦状态 */
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+}</pre>
+                
+                <h4>7.2.3 题目卡片</h4>
+                <pre>/* 题目容器 - Grid布局 */
+.questions-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+/* 题目项 */
+.question-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+/* 正确状态 */
+.question-item.correct {
+    border-left-color: #28a745;
+    background: #d4edda;
+}
+
+/* 错误状态 */
+.question-item.incorrect {
+    border-left-color: #dc3545;
+    background: #f8d7da;
+}</pre>
+                
+                <h3>7.3 JavaScript交互</h3>
+                
+                <h4>7.3.1 标签页切换</h4>
+                <pre>function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // AI对话跳转独立页面
+            if (tabId === 'ai') {
+                window.location.href = '/ai/chat';
+                return;
+            }
+            
+            // 切换激活状态
+            tabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 切换内容显示
+            tabContents.forEach(tab => tab.style.display = 'none');
+            document.getElementById(tabId + '-tab').style.display = 'block';
+        });
+    });
+}</pre>
+                
+                <h4>7.3.2 答案检查</h4>
+                <pre>function checkAnswers() {
+    let correct = 0;
+    wrongAnswers = [];
+    
+    currentQuestions.forEach((q, index) => {
+        const userAnswer = document.getElementById(`answer-${index}`).value.trim();
+        const questionDiv = document.getElementById(`question-${index}`);
+        const hintDiv = document.getElementById(`hint-${index}`);
+        const aiExplainBtn = document.getElementById(`ai-explain-btn-${index}`);
+        
+        // 判断正确性
+        let isCorrect = (currentType === 'math') 
+            ? userAnswer === String(q.answer)
+            : userAnswer === q.answer;
+        
+        if (isCorrect) {
+            correct++;
+            questionDiv.classList.add('correct');
+            questionDiv.classList.remove('incorrect');
+            hintDiv.style.display = 'none';
+            aiExplainBtn.style.display = 'none';
+        } else {
+            questionDiv.classList.add('incorrect');
+            questionDiv.classList.remove('correct');
+            hintDiv.innerHTML = `正确答案: ${q.answer}`;
+            hintDiv.style.display = 'block';
+            aiExplainBtn.style.display = 'inline-block';
+            
+            wrongAnswers.push({
+                question: q.question,
+                userAnswer: userAnswer,
+                correctAnswer: q.answer,
+                index: index
+            });
+        }
+    });
+    
+    // 显示结果
+    const percentage = Math.round((correct / currentQuestions.length) * 100);
+    document.getElementById('result-text').innerHTML = `
+        共 ${currentQuestions.length} 题，答对 ${correct} 题，答错 ${currentQuestions.length - correct} 题<br>
+        正确率: ${percentage}%
+    `;
+    document.getElementById('result-section').style.display = 'block';
+}</pre>
+                
+                <h4>7.3.3 错题本文件上传</h4>
+                <pre>function handleFileSelect(input, type) {
+    const files = Array.from(input.files);
+    selectedFiles[type] = files;
+    renderFilePreview(type);
+}
+
+function renderFilePreview(type) {
+    const previewContainer = document.getElementById(`${type}-preview`);
+    const files = selectedFiles[type];
+    
+    let html = '';
+    if (files.length > 0) {
+        files.forEach((file, index) => {
+            const fileType = getFileTypeFromName(file.name);
+            const iconText = getIconText(fileType);
+            
+            html += `
+                &lt;div class="preview-item"&gt;
+                    &lt;span class="file-icon ${fileType}"&gt;${iconText}&lt;/span&gt;
+                    &lt;span class="file-name" title="${file.name}"&gt;${file.name}&lt;/span&gt;
+                    &lt;button type="button" class="remove-file" onclick="removeFile('${type}', ${index})"&gt;×&lt;/button&gt;
+                &lt;/div&gt;
+            `;
+        });
+    }
+    
+    previewContainer.innerHTML = html;
+}</pre>
+            </section>
+            
+            <section id="ai-integration">
+                <h2>8. AI集成详解</h2>
+                
+                <h3>8.1 Ollama服务架构</h3>
+                <div class="diagram">
+                    <pre>┌───────────────────────────────────────────────────────────┐
+│                    Flask Application                       │
+│                                                           │
+│  ┌─────────────────┐    ┌─────────────────────────────┐  │
+│  │  /api/ai/chat   │───▶│     ollama.chat()           │  │
+│  │  /api/ai/explain│    │     stream=True             │  │
+│  │  /api/ai/models │    │     model='qwen2.5:0.5b'    │  │
+│  └─────────────────┘    └─────────────────────────────┘  │
+│                                    │                      │
+└────────────────────────────────────│──────────────────────┘
+                                     │ HTTP
+                                     ▼
+┌───────────────────────────────────────────────────────────┐
+│                    Ollama Server                           │
+│                    (localhost:11434)                       │
+│                                                           │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │                    Qwen2.5:0.5b                      │  │
+│  │                                                      │  │
+│  │    参数量: 0.5B                                      │  │
+│  │    上下文长度: 32K                                   │  │
+│  │    推理速度: ~50 tokens/s                           │  │
+│  │    内存占用: ~1GB                                    │  │
+│  └─────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────┘</pre>
+                </div>
+                
+                <h3>8.2 流式响应实现</h3>
+                
+                <h4>8.2.1 后端实现 (app.py)</h4>
+                <pre>@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    data = request.json
+    question = data.get('question', '')
+    model = data.get('model', 'qwen2.5:0.5b')
+    
+    if not question:
+        return jsonify({'error': '请输入问题'}), 400
+    
+    def generate():
+        try:
+            # 调用Ollama流式API
+            response = ollama.chat(
+                model=model,
+                messages=[{'role': 'user', 'content': question}],
+                stream=True
+            )
+            
+            # 逐块发送数据
+            for chunk in response:
+                content = chunk.get('message', {}).get('content', '')
+                if content:
+                    yield f"data: {json.dumps({'content': content})}\n\n"
+            
+            yield "data: [DONE]\n\n"
+            
+        except Exception as e:
+            error_msg = str(e)
+            if 'Failed to connect' in error_msg:
+                yield f"data: {json.dumps({'content': '无法连接到Ollama服务...'})}\n\n"
+            else:
+                yield f"data: {json.dumps({'content': f'回答失败：{error_msg}'})}\n\n"
+            yield "data: [DONE]\n\n"
+    
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no'
+        }
+    )</pre>
+                
+                <h4>8.2.2 前端实现 (app.js)</h4>
+                <pre>async function sendMessage() {
+    const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: message, model })
+    });
+    
+    if (response.ok) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    
+                    if (data === '[DONE]') {
+                        // 完成，渲染最终Markdown
+                        contentDiv.innerHTML = parseMarkdown(fullContent);
+                        break;
+                    }
+                    
+                    try {
+                        const json = JSON.parse(data);
+                        if (json.content) {
+                            fullContent += json.content;
+                            // 实时显示文本
+                            contentDiv.textContent = fullContent;
+                        }
+                    } catch (e) {
+                        console.error('解析失败:', e);
+                    }
+                }
+            }
+        }
+    }
+}</pre>
+                
+                <h3>8.3 错题讲解Prompt设计</h3>
+                
+                <h4>8.3.1 单题讲解Prompt</h4>
+                <pre>prompt = f"""请详细讲解以下{subject_name}题目：
+
+题目：{question_text}
+学生答案：{user_answer or '未作答'}
+正确答案：{correct_answer}
+
+请给出详细的解题思路、知识点分析和正确答案的推导过程。如果学生的答案是错误的，请指出错误原因。"""</pre>
+                
+                <h4>8.3.2 批量讲解Prompt</h4>
+                <pre>prompt = f"""请帮我讲解以下{subject_name}错题，每道题给出详细的解题思路和正确答案：
+
+题目1：{wrong_question_1}
+我的答案：{user_answer_1}
+正确答案：{correct_answer_1}
+
+题目2：...
+
+请针对每道错题给出详细的讲解，包括解题思路、知识点分析和正确答案的推导过程。"""</pre>
+                
+                <h4>8.3.3 错题本讲解Prompt</h4>
+                <pre>prompt = f"""请详细讲解以下{subject}错题：
+
+错题标题：{title}
+错题内容：{question_text}
+正确答案：{answer_text}
+笔记：{notes}
+
+请给出详细的解题思路、知识点分析和正确答案的推导过程，并提供相关的学习建议。"""</pre>
+            </section>
+            
+            <section id="word-generation">
+                <h2>9. Word文档生成</h2>
+                
+                <h3>9.1 文档生成流程</h3>
+                <div class="diagram">
+                    <pre>┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  创建文档   │───▶│  设置页面   │───▶│  添加内容   │───▶│  保存文件   │
+│  Document() │    │  section    │    │  table/para │    │  doc.save() │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘</pre>
+                </div>
+                
+                <h3>9.2 页面设置</h3>
+                <pre>section = doc.sections[0]
+
+# A4纸尺寸 (英寸)
+section.page_height = Inches(11.69)  # 297mm
+section.page_width = Inches(8.27)    # 210mm
+
+# 页边距
+section.left_margin = Inches(0.5)    # 12.7mm
+section.right_margin = Inches(0.5)
+section.top_margin = Inches(0.5)
+section.bottom_margin = Inches(0.5)</pre>
+                
+                <h3>9.3 不同题型的文档样式</h3>
+                
+                <h4>9.3.1 数学题文档</h4>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>属性</th>
+                            <th>值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>列数</td>
+                            <td>5列</td>
+                        </tr>
+                        <tr>
+                            <td>字体</td>
+                            <td>Times New Roman</td>
+                        </tr>
+                        <tr>
+                            <td>中文字体</td>
+                            <td>宋体</td>
+                        </tr>
+                        <tr>
+                            <td>字号</td>
+                            <td>14pt (4号)</td>
+                        </tr>
+                        <tr>
+                            <td>行距</td>
+                            <td>1.5倍</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <pre>filepath = create_word_document(
+    questions, 
+    '数学练习题', 
+    cols=5, 
+    font_name='Times New Roman', 
+    chinese_font='宋体', 
+    font_size=14
+)</pre>
+                
+                <h4>9.3.2 古诗题文档</h4>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>属性</th>
+                            <th>值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>列数</td>
+                            <td>2列</td>
+                        </tr>
+                        <tr>
+                            <td>字体</td>
+                            <td>楷体</td>
+                        </tr>
+                        <tr>
+                            <td>中文字体</td>
+                            <td>楷体</td>
+                        </tr>
+                        <tr>
+                            <td>字号</td>
+                            <td>14pt</td>
+                        </tr>
+                        <tr>
+                            <td>行距</td>
+                            <td>1.5倍</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <pre>filepath = create_word_document(
+    questions, 
+    '古诗默写练习', 
+    cols=2, 
+    font_name='楷体', 
+    chinese_font='楷体'
+)</pre>
+                
+                <h4>9.3.3 英语题文档</h4>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>属性</th>
+                            <th>值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>列数</td>
+                            <td>3列</td>
+                        </tr>
+                        <tr>
+                            <td>字体</td>
+                            <td>Times New Roman</td>
+                        </tr>
+                        <tr>
+                            <td>中文字体</td>
+                            <td>宋体</td>
+                        </tr>
+                        <tr>
+                            <td>字号</td>
+                            <td>10.5pt (5号)</td>
+                        </tr>
+                        <tr>
+                            <td>行距</td>
+                            <td>1.5倍</td>
+                        </tr>
+                        <tr>
+                            <td>特殊</td>
+                            <td>包含答题横线</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>9.4 练习报告格式</h3>
+                <pre>def download_report():
+    # 创建文档
+    doc = Document()
+    
+    # 添加标题
+    title = doc.add_heading('练习报告', 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    # 添加统计信息
+    correct_count = sum(1 for a in answers if a.get('is_correct', False))
+    total_count = len(answers)
+    percentage = round((correct_count / total_count * 100), 1)
+    
+    summary = doc.add_paragraph()
+    summary.add_run(f'共 {total_count} 题，答对 {correct_count} 题，答错 {total_count - correct_count} 题，正确率 {percentage}%')
+    summary.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    # 添加每题详情
+    for i, answer in enumerate(answers, 1):
+        p = doc.add_paragraph()
+        
+        # 题号
+        p.add_run(f'第 {i} 题：').bold = True
+        
+        # 题目
+        question_run = p.add_run(f'\n题目：{answer.get("question", "")}')
+        question_run.font.name = '宋体'
+        question_run.font.size = Pt(11)
+        
+        # 用户答案
+        user_run = p.add_run(f'\n你的答案：{answer.get("user_answer", "")}')
+        
+        # 正确答案
+        correct_run = p.add_run(f'\n正确答案：{answer.get("correct_answer", "")}')
+        correct_run.font.bold = True
+        
+        # 结果标记 (带颜色)
+        is_correct = answer.get('is_correct', False)
+        result_run = p.add_run(f'\n结果：{"✓ 正确" if is_correct else "✗ 错误"}')
+        result_run.font.color.rgb = RGBColor(0, 128, 0) if is_correct else RGBColor(255, 0, 0)
+        
+        # 段落格式
+        p.paragraph_format.line_spacing = 1.5
+        p.paragraph_format.space_after = Pt(12)
+    
+    # 保存
+    filename = f"练习报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+    filepath = os.path.join('data', filename)
+    doc.save(filepath)
+    
+    return send_file(filepath, as_attachment=True)</pre>
+                
+                <h3>9.5 表格边框处理</h3>
+                <pre>def set_cell_border(cell, **kwargs):
+    """设置单元格边框"""
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    
+    # 获取或创建边框元素
+    tcBorders = tcPr.first_child_found_in("w:tcBorders")
+    if tcBorders is None:
+        tcBorders = OxmlElement('w:tcBorders')
+        tcPr.append(tcBorders)
+    
+    # 设置各边框
+    for edge in ('left', 'top', 'right', 'bottom', 'insideH', 'insideV'):
+        edge_data = kwargs.get(edge)
+        if edge_data:
+            tag = f'w:{edge}'
+            element = tcBorders.find(qn(tag))
+            if element is None:
+                element = OxmlElement(tag)
+                tcBorders.append(element)
+            
+            # 设置边框属性
+            for key in ["sz", "val", "color", "space", "shadow"]:
+                if key in edge_data:
+                    element.set(qn(f'w:{key}'), str(edge_data[key]))
+
+# 使用示例
+set_cell_border(cell, 
+    top={"sz": "6", "val": "single", "color": "000000"},
+    bottom={"sz": "6", "val": "single", "color": "000000"},
+    left={"sz": "6", "val": "single", "color": "000000"},
+    right={"sz": "6", "val": "single", "color": "000000"}
+)</pre>
+            </section>
+            
+            <section id="cache">
+                <h2>10. 缓存机制</h2>
+                
+                <h3>10.1 缓存实现</h3>
+                <pre># 缓存存储
+cache = {}
+cache_expiry = {}
+CACHE_DURATION = timedelta(minutes=5)
+
+def get_cached_data(key):
+    """获取缓存数据"""
+    if key in cache and datetime.now() < cache_expiry.get(key, datetime.min):
+        return cache[key]
+    return None
+
+def set_cached_data(key, data):
+    """设置缓存数据"""
+    cache[key] = data
+    cache_expiry[key] = datetime.now() + CACHE_DURATION
+
+def clear_cache():
+    """清除所有缓存"""
+    cache.clear()
+    cache_expiry.clear()</pre>
+                
+                <h3>10.2 缓存使用场景</h3>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>缓存键</th>
+                            <th>数据内容</th>
+                            <th>过期时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>math_config</td>
+                            <td>数学题配置</td>
+                            <td>5分钟</td>
+                        </tr>
+                        <tr>
+                            <td>poetry_list</td>
+                            <td>古诗列表</td>
+                            <td>5分钟</td>
+                        </tr>
+                        <tr>
+                            <td>english_units</td>
+                            <td>英语单元</td>
+                            <td>5分钟</td>
+                        </tr>
+                        <tr>
+                            <td>error_notebook_stats</td>
+                            <td>错题本统计</td>
+                            <td>10分钟</td>
+                        </tr>
+                        <tr>
+                            <td>error_notebook_subjects</td>
+                            <td>错题本科目</td>
+                            <td>10分钟</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>10.3 缓存使用示例</h3>
+                <pre>@app.route('/api/math/config')
+def get_math_config():
+    """获取数学配置，使用缓存"""
+    cache_key = 'math_config'
+    
+    # 尝试从缓存获取
+    cached_data = get_cached_data(cache_key)
+    if cached_data:
+        return jsonify(cached_data)
+    
+    # 缓存未命中，读取文件
+    data_file = os.path.join('data', 'math_config.json')
+    if os.path.exists(data_file):
+        with open(data_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # 写入缓存
+        set_cached_data(cache_key, data)
+        return jsonify(data)
+    
+    return jsonify({})
+
+@app.route('/api/notebook/stats')
+def get_notebook_stats():
+    """获取错题本统计，使用缓存"""
+    cache_key = 'error_notebook_stats'
+    
+    cached_data = get_cached_data(cache_key)
+    if cached_data:
+        return jsonify(cached_data)
+    
+    # 读取错题本数据并计算统计
+    data = get_error_notebook_data()
+    errors = data.get('errors', [])
+    
+    # 统计各科目错题数量
+    subject_counts = {}
+    for error in errors:
+        subject = error.get('subject', '其他')
+        subject_counts[subject] = subject_counts.get(subject, 0) + 1
+    
+    stats = {
+        'total_errors': len(errors),
+        'subject_counts': subject_counts,
+        'total_files': sum(len(e.get(f'{t}_files', [])) for e in errors for t in ['question', 'answer', 'video'])
+    }
+    
+    set_cached_data(cache_key, stats)
+    return jsonify(stats)</pre>
+            </section>
+            
+            <section id="security">
+                <h2>11. 安全性设计</h2>
+                
+                <h3>11.1 输入验证</h3>
+                <pre># 请求体验证
+if not question:
+    return jsonify({'error': '请输入问题'}), 400
+
+if not gradeId or not categoryId or not typeId:
+    alert('请完整选择年级、类别和题型');
+    return;
+
+# 文件上传验证
+def allowed_file(filename):
+    """检查文件扩展名是否允许"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS</pre>
+                
+                <h3>11.2 XSS防护</h3>
+                <pre>function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 用户输入显示时转义
+userMessage.innerHTML = `<p>${escapeHtml(message)}</p>`;</pre>
+                
+                <h3>11.3 文件路径安全</h3>
+                <pre># 使用os.path.join避免路径遍历
+data_file = os.path.join('data', 'math_config.json')
+
+# 文件名使用时间戳，避免用户输入
+filename = f"练习报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+filepath = os.path.join('data', filename)
+
+# 使用werkzeug.secure_filename确保文件名安全
+from werkzeug.utils import secure_filename
+filename = secure_filename(user_uploaded_filename)</pre>
+                
+                <h3>11.4 错误处理</h3>
+                <pre>try:
+    response = ollama.chat(model=model, messages=[...])
+except Exception as e:
+    error_msg = str(e)
+    if 'Failed to connect' in error_msg or 'Connection refused' in error_msg:
+        # 友好的错误提示，不暴露系统信息
+        return jsonify({'error': '无法连接到AI服务'}), 500
+    return jsonify({'error': '服务暂时不可用'}), 500</pre>
+                
+                <h3>11.5 文件上传安全</h3>
+                <pre>ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'pdf', 'doc', 'docx', 'txt', 'md', 'mp4', 'avi', 'mov', 'mkv', 'webm', 'mp3', 'wav'}
+
+def get_file_type(filename):
+    """根据文件名获取文件类型"""
+    if not filename:
+        return 'unknown'
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    if ext in {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}:
+        return 'image'
+    elif ext == 'pdf':
+        return 'pdf'
+    # ... 其他类型判断
+    return 'file'</pre>
+            </section>
+            
+            <section id="deployment">
+                <h2>12. 部署指南</h2>
+                
+                <h3>12.1 环境要求</h3>
+                
+                <h4>12.1.1 硬件要求</h4>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>组件</th>
+                            <th>最低配置</th>
+                            <th>推荐配置</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CPU</td>
+                            <td>双核</td>
+                            <td>四核及以上</td>
+                        </tr>
+                        <tr>
+                            <td>内存</td>
+                            <td>2GB</td>
+                            <td>4GB及以上</td>
+                        </tr>
+                        <tr>
+                            <td>硬盘</td>
+                            <td>100MB (不含模型)</td>
+                            <td>2GB (含模型)</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h4>12.1.2 软件要求</h4>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>软件</th>
+                            <th>版本要求</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Python</td>
+                            <td>3.7+</td>
+                        </tr>
+                        <tr>
+                            <td>pip</td>
+                            <td>最新版本</td>
+                        </tr>
+                        <tr>
+                            <td>Ollama</td>
+                            <td>0.4.7+</td>
+                        </tr>
+                        <tr>
+                            <td>浏览器</td>
+                            <td>Chrome/Firefox/Safari/Edge (最新版)</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>12.2 安装步骤</h3>
+                
+                <h4>12.2.1 Linux/macOS</h4>
+                <pre># 1. 克隆项目
+git clone &lt;repository-url&gt;
+cd app
+
+# 2. 创建虚拟环境
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. 安装依赖
+pip install -r requirements.txt
+
+# 4. 安装Ollama (可选，用于AI功能)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 5. 下载AI模型 (可选)
+ollama pull qwen2.5:0.5b
+
+# 6. 启动Ollama服务 (可选)
+ollama serve &
+
+# 7. 启动应用
+python3 app.py</pre>
+                
+                <h4>12.2.2 Windows</h4>
+                <pre># 1. 下载项目并解压
+
+# 2. 运行一键安装脚本
+windows_installer.bat
+
+# 或手动安装:
+# 3. 创建虚拟环境
+python -m venv venv
+venv\Scripts\activate
+
+# 4. 安装依赖
+pip install -r requirements.txt
+
+# 5. 启动应用
+python app.py</pre>
+                
+                <h3>12.3 配置说明</h3>
+                
+                <h4>12.3.1 端口配置</h4>
+                <pre># app.py 最后一行
+if __name__ == '__main__':
+    app.run(
+        debug=True,      # 调试模式 (生产环境设为False)
+        host='0.0.0.0',  # 监听地址 (0.0.0.0允许外部访问)
+        port=3000        # 端口号
+    )</pre>
+                
+                <h4>12.3.2 环境变量 (可选)</h4>
+                <pre># 设置Flask环境
+export FLASK_ENV=production
+export FLASK_DEBUG=0</pre>
+                
+                <h3>12.4 生产部署建议</h3>
+                
+                <h4>12.4.1 使用Gunicorn (Linux)</h4>
+                <pre>pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:3000 app:app</pre>
+                
+                <h4>12.4.2 使用Nginx反向代理</h4>
+                <pre>server {
+    listen 80;
+    server_name example.com;
+    
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    
+    # SSE支持
+    location /api/ai/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_set_header Connection '';
+        proxy_http_version 1.1;
+        chunked_transfer_encoding off;
+    }
+}</pre>
+            </section>
+            
+            <section id="performance">
+                <h2>13. 性能优化</h2>
+                
+                <h3>13.1 前端优化</h3>
+                
+                <h4>13.1.1 延迟加载</h4>
+                <pre>document.addEventListener('DOMContentLoaded', function() {
+    initTabs();
+    
+    // 延迟100ms加载数据，优先渲染页面
+    setTimeout(() => {
+        loadPoetryList();
+        loadEnglishUnits();
+        loadMathConfig();
+    }, 100);
+});</pre>
+                
+                <h4>13.1.2 MathJax懒加载</h4>
+                <pre>// 只在需要时加载MathJax
+window.loadMathJax = function() {
+    if (typeof MathJax === 'undefined') {
+        // 动态创建script标签
+        const script = document.createElement('script');
+        script.src = 'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js';
+        script.async = true;
+        document.head.appendChild(script);
+    }
+};</pre>
+                
+                <h4>13.1.3 防止重复提交</h4>
+                <pre>async function generateMath() {
+    const generateBtn = document.querySelector('button[onclick="generateMath()"]');
+    
+    // 禁用按钮防止重复点击
+    if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.textContent = '生成中...';
+    }
+    
+    try {
+        // 执行请求...
+    } finally {
+        // 恢复按钮状态
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.textContent = '生成题目';
+        }
+    }
+}</pre>
+                
+                <h3>13.2 后端优化</h3>
+                
+                <h4>13.2.1 数据缓存</h4>
+                <ul>
+                    <li>数学配置、古诗列表、英语单元使用5分钟缓存</li>
+                    <li>减少文件IO操作</li>
+                    <li>错题本统计信息使用10分钟缓存</li>
+                </ul>
+                
+                <h4>13.2.2 流式响应</h4>
+                <pre># 使用生成器函数进行流式响应
+def generate():
+    for chunk in response:
+        yield f"data: {json.dumps({'content': chunk})}\n\n"
+
+return Response(stream_with_context(generate()), mimetype='text/event-stream')</pre>
+                
+                <h4>13.2.3 响应头优化</h4>
+                <pre>headers = {
+    'Cache-Control': 'no-cache',     # 禁用缓存
+    'X-Accel-Buffering': 'no'        # 禁用Nginx缓冲
+}</pre>
+            </section>
+            
+            <section id="error-handling">
+                <h2>14. 错误处理</h2>
+                
+                <h3>14.1 前端错误处理</h3>
+                <pre>async function generateMath() {
+    try {
+        const response = await fetch('/api/generate/math', {...});
+        const data = await response.json();
+        // 处理数据
+    } catch (error) {
+        console.error('生成数学题失败:', error);
+        alert('生成题目失败，请重试');
+    }
+}</pre>
+                
+                <h3>14.2 后端错误处理</h3>
+                <pre>@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    try:
+        # 正常处理
+    except Exception as e:
+        error_msg = str(e)
+        print(f"AI回答失败: {error_msg}")
+        
+        # 区分错误类型，返回友好提示
+        if 'Failed to connect' in error_msg or 'Connection refused' in error_msg:
+            yield f"data: {json.dumps({'content': '无法连接到Ollama服务...'})}\n\n"
+        else:
+            yield f"data: {json.dumps({'content': f'回答失败：{error_msg}'})}\n\n"</pre>
+                
+                <h3>14.3 常见错误及解决方案</h3>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>错误</th>
+                            <th>原因</th>
+                            <th>解决方案</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>端口被占用</td>
+                            <td>3000端口已被其他程序使用</td>
+                            <td>修改app.py中的端口号</td>
+                        </tr>
+                        <tr>
+                            <td>无法连接Ollama</td>
+                            <td>Ollama服务未启动</td>
+                            <td>运行 `ollama serve`</td>
+                        </tr>
+                        <tr>
+                            <td>模型未找到</td>
+                            <td>未下载AI模型</td>
+                            <td>运行 `ollama pull qwen2.5:0.5b`</td>
+                        </tr>
+                        <tr>
+                            <td>JSON解析失败</td>
+                            <td>数据文件格式错误</td>
+                            <td>检查JSON文件语法</td>
+                        </tr>
+                        <tr>
+                            <td>Word文档打开失败</td>
+                            <td>Office未安装或文件损坏</td>
+                            <td>重新生成或使用其他软件打开</td>
+                        </tr>
+                        <tr>
+                            <td>文件上传失败</td>
+                            <td>文件类型不支持或过大</td>
+                            <td>检查ALLOWED_EXTENSIONS配置</td>
+                        </tr>
+                        <tr>
+                            <td>数据库连接失败</td>
+                            <td>数据库服务未启动</td>
+                            <td>启动数据库服务</td>
+                        </tr>
+                    </tbody>
+                </div>
+            </section>
+            
+            <section id="extension">
+                <h2>15. 扩展指南</h2>
+                
+                <h3>15.1 添加新题型</h3>
+                
+                <h4>15.1.1 修改数学配置</h4>
+                <pre>// data/math_config.json
+{
+  "grade_levels": [
+    {
+      "id": "7-9",
+      "name": "7-9年级",
+      "description": "初中数学",
+      "categories": [
+        {
+          "id": "algebra",
+          "name": "代数运算",
+          "types": [
+            {
+              "id": "linear_equation",
+              "name": "一元一次方程",
+              "examples": ["2x + 3 = 7"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+                
+                <h4>15.1.2 添加题目生成函数</h4>
+                <pre># app.py
+def generate_grade_7_9_question(category_id, type_id):
+    if category_id == 'algebra':
+        if type_id == 'linear_equation':
+            # 生成 ax + b = c 形式的方程
+            a = random.randint(2, 10)
+            x = random.randint(1, 10)
+            b = random.randint(1, 20)
+            c = a * x + b
+            return {
+                'question': f'{a}x + {b} = {c}',
+                'answer': x
+            }
+    return {'question': '', 'answer': ''}</pre>
+                
+                <h3>15.2 添加新学科</h3>
+                
+                <h4>15.2.1 创建数据文件</h4>
+                <pre>// data/physics.json
+{
+  "grade": "初二上册",
+  "chapters": [
+    {
+      "name": "第一章 声现象",
+      "formulas": [
+        {
+          "name": "声速公式",
+          "formula": "v = s/t",
+          "variables": {
+            "v": "声速(m/s)",
+            "s": "距离(m)",
+            "t": "时间(s)"
+          }
+        }
+      ]
+    }
+  ]
+}</pre>
+                
+                <h4>15.2.2 添加API路由</h4>
+                <pre>@app.route('/api/physics/chapters')
+def get_physics_chapters():
+    data_file = os.path.join('data', 'physics.json')
+    if os.path.exists(data_file):
+        with open(data_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return jsonify(data.get('chapters', []))
+    return jsonify([])</pre>
+                
+                <h4>15.2.3 添加前端标签页</h4>
+                <pre>&lt;!-- templates/index.html --&gt;
+&lt;button class="tab-btn" data-tab="physics"&gt;物理&lt;/button&gt;
+
+&lt;div class="tab-content" id="physics-tab" style="display: none;"&gt;
+    &lt;!-- 物理题设置表单 --&gt;
+&lt;/div&gt;</pre>
+                
+                <h3>15.3 集成其他AI模型</h3>
+                <pre># 修改默认模型
+@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    model = data.get('model', 'llama3:8b')  # 更换模型
+    
+    response = ollama.chat(
+        model=model,
+        messages=[{'role': 'user', 'content': question}],
+        stream=True
+    )</pre>
+                
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>模型</th>
+                            <th>参数量</th>
+                            <th>特点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>qwen2.5:0.5b</td>
+                            <td>0.5B</td>
+                            <td>轻量快速，中文优化</td>
+                        </tr>
+                        <tr>
+                            <td>qwen2.5:1.5b</td>
+                            <td>1.5B</td>
+                            <td>平衡性能</td>
+                        </tr>
+                        <tr>
+                            <td>llama3:8b</td>
+                            <td>8B</td>
+                            <td>通用能力强</td>
+                        </tr>
+                        <tr>
+                            <td>mistral:7b</td>
+                            <td>7B</td>
+                            <td>推理能力强</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>15.4 扩展错题本功能</h3>
+                
+                <h4>15.4.1 添加错题分类</h4>
+                <pre>def get_file_type(filename):
+    """根据文件名获取文件类型"""
+    if not filename:
+        return 'unknown'
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    if ext in {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}:
+        return 'image'
+    elif ext == 'pdf':
+        return 'pdf'
+    elif ext in {'doc', 'docx'}:
+        return 'word'
+    elif ext in {'txt', 'md'}:
+        return 'text'
+    elif ext in {'mp4', 'avi', 'mov', 'mkv', 'webm'}:
+        return 'video'
+    elif ext in {'mp3', 'wav'}:
+        return 'audio'
+    return 'file'</pre>
+                
+                <h4>15.4.2 添加错题标签系统</h4>
+                <pre>interface ErrorRecord {
+  // ... 现有字段
+  tags: string[];              // 错题标签
+  difficulty: string;          // 难度等级 (简单/中等/困难)
+  importance: string;          // 重要程度 (一般/重要/非常重要)
+}</pre>
+            </section>
+            
+            <section id="appendix">
+                <h2>16. 附录</h2>
+                
+                <h3>16.1 依赖包版本</h3>
+                <pre>Flask==3.0.0
+python-docx==1.1.0
+ollama==0.4.7
+uuid==1.0</pre>
+                
+                <h3>16.2 文件编码</h3>
+                <p>所有文件使用 UTF-8 编码，包括:</p>
+                <ul>
+                    <li>Python源代码 (.py)</li>
+                    <li>JSON数据文件 (.json)</li>
+                    <li>HTML模板 (.html)</li>
+                    <li>CSS样式表 (.css)</li>
+                    <li>JavaScript脚本 (.js)</li>
+                </ul>
+                
+                <h3>16.3 代码规范</h3>
+                
+                <h4>16.3.1 Python</h4>
+                <ul>
+                    <li>PEP 8 代码风格</li>
+                    <li>函数使用下划线命名 (snake_case)</li>
+                    <li>类使用驼峰命名 (CamelCase)</li>
+                </ul>
+                
+                <h4>16.3.2 JavaScript</h4>
+                <ul>
+                    <li>ES6+ 语法</li>
+                    <li>函数使用驼峰命名 (camelCase)</li>
+                    <li>常量使用大写下划线 (UPPER_SNAKE_CASE)</li>
+                </ul>
+                
+                <h4>16.3.3 CSS</h4>
+                <ul>
+                    <li>BEM命名规范</li>
+                    <li>类名使用短横线连接 (kebab-case)</li>
+                </ul>
+                
+                <h3>16.4 版本历史</h3>
+                <div class="property-table">
+                    <thead>
+                        <tr>
+                            <th>版本</th>
+                            <th>日期</th>
+                            <th>主要变更</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>v1.0.0</td>
+                            <td>2026-01-01</td>
+                            <td>初始版本：数学题、古诗默写、Word导出</td>
+                        </tr>
+                        <tr>
+                            <td>v1.1.0</td>
+                            <td>2026-01-10</td>
+                            <td>新增英语默写、中英互译</td>
+                        </tr>
+                        <tr>
+                            <td>v1.2.0</td>
+                            <td>2026-01-15</td>
+                            <td>新增练习报告、分数显示、AI问答、错题讲解</td>
+                        </tr>
+                        <tr>
+                            <td>v1.3.0</td>
+                            <td>2026-02-04</td>
+                            <td>新增错题本功能，支持文件上传、视频讲解</td>
+                        </tr>
+                    </tbody>
+                </div>
+                
+                <h3>16.5 联系方式</h3>
+                <ul>
+                    <li><strong>作者</strong>: Song Zichen</li>
+                    <li><strong>学校</strong>: Quan Hai Middle School</li>
+                    <li><strong>项目用途</strong>: 学习与教学</li>
+                </ul>
+            </section>
+        </main>
+        
+        <div class="footer">
+            <p>智能辅助学习系统 - 技术文档</p>
+            <p>© 2026 Song Zichen, Quan Hai Middle School. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

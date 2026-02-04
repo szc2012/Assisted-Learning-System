@@ -5,6 +5,8 @@
     box-sizing: border-box;
 }
 
+
+
 body {
     font-family: 'Microsoft YaHei', Arial, sans-serif;
     background: #f5f5f5;
@@ -31,6 +33,62 @@ header h1 {
 .subtitle {
     font-size: 1.2em;
     color: #666;
+}
+
+/* 头部带链接布局 */
+.header-with-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.header-main {
+    text-align: center;
+}
+
+.notebook-link {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.notebook-link:hover {
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.notebook-icon {
+    font-size: 18px;
+}
+
+@media (max-width: 768px) {
+    .header-with-link {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .notebook-link {
+        position: static;
+        transform: none;
+    }
+    
+    .notebook-link:hover {
+        transform: scale(1.05);
+    }
 }
 
 .tabs {

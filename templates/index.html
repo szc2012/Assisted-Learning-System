@@ -4,24 +4,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能辅助学习系统</title>
+    <title>在线出题系统</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <!-- MathJax 懒加载配置 -->
+    <script>
+        // 只在需要时加载MathJax
+        window.loadMathJax = function() {
+            if (typeof MathJax === 'undefined') {
+                window.MathJax = {
+                    tex: {
+                        inlineMath: [['$', '$'], ['\\(', '\\)']],
+                        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                        processEscapes: true
+                    },
+                    options: {
+                        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                    },
+                    startup: {
+                        ready: () => {
+                            MathJax.startup.defaultReady();
+                            console.log('MathJax is loaded');
+                        }
+                    }
+                };
+                
+                // 创建并添加MathJax脚本（使用国内CDN）
+                const script = document.createElement('script');
+                script.id = 'MathJax-script';
+                script.src = 'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js';
+                script.async = true;
+                document.head.appendChild(script);
+            }
+        };
+    </script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>智能辅助学习系统</h1>
-            <p class="subtitle">支持数学、古诗、英语多种题型</p>
+            <div class="header-with-link">
+                <div class="header-main">
+                    <h1>在线出题系统</h1>
+                    <p class="subtitle">支持数学、古诗、英语多种题型</p>
+                </div>
+                <a href="/notebook" class="notebook-link">
+                    <span class="notebook-icon">📒</span>
+                    <span>错题本</span>
+                </a>
+            </div>
         </header>
 
         <div class="tabs">
             <button class="tab-btn active" data-tab="math">数学题</button>
             <button class="tab-btn" data-tab="poetry">古诗默写</button>
             <button class="tab-btn" data-tab="english">英语默写</button>
-            <button class="tab-btn" data-tab="ai">AI问答</button>
+            <button class="tab-btn" data-tab="ai">AI对话</button>
         </div>
 
-        <div class="tab-content active" id="math-tab">
+        <div class="tab-content" id="math-tab" style="display: block;">
             <div class="card">
                 <h2>数学题设置</h2>
                 <div class="form-group">
@@ -96,35 +135,6 @@
             </div>
         </div>
 
-        <div class="tab-content" id="ai-tab" style="display: none;">
-            <div class="card">
-                <h2>AI智能问答</h2>
-                <div class="form-group">
-                    <label>选择模型：</label>
-                    <select id="ai-model">
-                        <option value="qwen2.5:0.5b">Qwen2.5 0.5B</option>
-                    </select>
-                </div>
-                <div class="chat-container">
-                    <div id="chat-messages" class="chat-messages">
-                        <div class="chat-message system-message">
-                            <div class="message-content">
-                                <p>欢迎使用AI智能问答！</p>
-                                <p>您可以问我任何问题，我会尽力回答。</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chat-input-container">
-                        <textarea id="chat-input" placeholder="输入您的问题..." rows="3"></textarea>
-                        <div class="chat-actions">
-                            <button class="btn btn-primary" onclick="sendMessage()">发送</button>
-                            <button class="btn btn-secondary" onclick="clearChat()">清空对话</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="questions-section" id="questions-section" style="display: none;">
             <div class="card">
                 <h2>在线练习</h2>
@@ -138,28 +148,12 @@
                     <p id="result-text"></p>
                     <div class="button-group" style="margin-top: 15px;">
                         <button class="btn btn-success" onclick="downloadReport()">下载练习报告</button>
-                        <button class="btn btn-warning" id="ai-explain-btn" onclick="askAIForWrongAnswers()" style="display: none;">AI错题讲解</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="ai-explain-modal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>AI错题讲解</h3>
-                    <span class="close" onclick="closeAIExplainModal()">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div id="ai-explain-messages" class="ai-explain-messages"></div>
-                    <div id="ai-explain-loading" class="ai-explain-loading" style="display: none;">
-                        <p>正在分析错题...</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script defer src="/static/js/app.js"></script>
 </body>
 </html>

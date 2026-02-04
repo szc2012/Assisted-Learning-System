@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能辅助学习系统 - AI对话</title>
+    <!-- 关键CSS内联，确保首屏快速渲染 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .subtitle {
+            font-size: 1.2em;
+            color: #666;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s ease-out;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chat-header h2 {
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-header h2 i {
+            font-size: 1.1em;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            scroll-behavior: smooth;
+        }
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            animation: messageFadeIn 0.3s ease-out;
+        }
+        .user-message {
+            align-items: flex-end;
+        }
+        .ai-message {
+            align-items: flex-start;
+        }
+        .message-content {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .user-message .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .ai-message .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        .message-time {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 8px;
+            padding: 0 10px;
+        }
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .chat-input-area textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            resize: none;
+            font-family: inherit;
+            font-size: 16px;
+            margin-bottom: 12px;
+            min-height: 100px;
+            transition: all 0.2s ease;
+            background: #f9f9f9;
+        }
+        .chat-input-area textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+        .chat-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            transform: translateY(-1px);
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .loading::after {
+            content: '';
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: white;
+            color: #333;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .model-selector select {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+        .model-selector select option {
+            background: #667eea;
+            color: white;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes messageFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .message-content {
+                max-width: 90%;
+                padding: 12px 16px;
+            }
+            .chat-container {
+                max-height: 600px;
+                border-radius: 8px;
+            }
+            .chat-input-area {
+                padding: 15px;
+            }
+            .chat-input-area textarea {
+                min-height: 80px;
+                padding: 12px;
+            }
+            .btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+        @media (max-width: 480px) {
+            .chat-messages {
+                padding: 15px;
+            }
+            .message-content {
+                max-width: 95%;
+            }
+            .chat-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+    <!-- 预加载关键资源 -->
+    <link rel="preconnect" href="https://cdn.bootcdn.net">
+    <link rel="dns-prefetch" href="https://cdn.bootcdn.net">
+    <!-- 延迟加载Font Awesome (国内CDN) -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <!-- 延迟加载MathJax -->
+    <script defer>
+        window.loadMathJax = function() {
+            if (typeof MathJax === 'undefined') {
+                window.MathJax = {
+                    tex: {
+                        inlineMath: [['$', '$'], ['\\(', '\\)']],
+                        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                        processEscapes: true
+                    },
+                    options: {
+                        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                    },
+                    startup: {
+                        typeset: false
+                    }
+                };
+                const script = document.createElement('script');
+                script.id = 'MathJax-script';
+                script.src = 'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js';
+                script.async = true;
+                document.head.appendChild(script);
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn"><i class="fa fa-arrow-left"></i> 返回首页</a>
+        
+        <header>
+            <h1>AI智能对话</h1>
+            <p class="subtitle">智能辅助学习系统</p>
+        </header>
+        
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2><i class="fa fa-robot"></i> 智能AI助手</h2>
+                <div class="model-selector">
+                    <select id="ai-model">
+                        <option value="qwen2.5:0.5b">Qwen2.5 0.5B</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <!-- 系统欢迎消息 -->
+                <div class="message ai-message">
+                    <div class="message-content">
+                        <p>你好！我是智能AI助手，有什么可以帮助你的吗？</p>
+                        <p>我可以回答各种问题，包括数学、语文、英语等学科问题，也可以和你聊天。</p>
+                        <p>支持Markdown格式和数学公式哦！</p>
+                    </div>
+                    <div class="message-time">系统</div>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <textarea id="chat-input" placeholder="输入你的问题..."></textarea>
+                <div class="chat-actions">
+                    <button class="btn btn-secondary" id="clear-btn"><i class="fa fa-trash"></i> 清空</button>
+                    <button class="btn btn-primary" id="send-btn"><i class="fa fa-paper-plane"></i> 发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 延迟加载JavaScript -->
+    <script defer src="{{ url_for('static', filename='js/ai_chat.js') }}"></script>
+</body>
+</html>
